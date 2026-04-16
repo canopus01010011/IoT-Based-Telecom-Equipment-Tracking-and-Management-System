@@ -84,15 +84,19 @@ export default function TechDashboard() {
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Abdemadjid Teboun</Text>
           </View>
+<Pressable
+  style={styles.iconCircle}
+  onPress={() => router.push("../notifications")}
+>
+  <BellIcon color={colors.primary} size={22} />
 
-          <View style={styles.iconCircle}>
-            <BellIcon color={colors.primary} size={22} />
-            {notifications > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{notifications}</Text>
-              </View>
-            )}
-          </View>
+  {notifications > 0 && (
+    <View style={styles.badge}>
+      <Text style={styles.badgeText}>{notifications}</Text>
+    </View>
+  )}
+</Pressable>
+
         </View>
 
         {/* Quick Stats */}
