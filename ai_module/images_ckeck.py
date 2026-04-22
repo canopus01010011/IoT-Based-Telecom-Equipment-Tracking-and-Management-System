@@ -7,8 +7,8 @@ CONTRAST_LOW = 20
 def classify_blur(s):
     return "Blurry" if s < BLUR_BLURRY else "Slightly Blurry" if s < BLUR_SLIGHT else "Sharp"
 
-def result_color(r):
-    return (0, 255, 0) if r in ("Sharp", "Good") else (0, 100, 255)
+def classify_brightness(b):
+    return "Too Dark" if b < BRIGHTNESS_DARK else "Too Bright" if b > BRIGHTNESS_BRIGHT else "Good"
 
 image = cv2.imread("C:/pyproject/4.jpg")
 if image is None:
@@ -20,9 +20,12 @@ scale = min(800 / w, 600 / h)
 resized = cv2.resize(image, (int(w * scale), int(h * scale)))
 
 gray = cv2.cvtColor(cv2.resize(image, (int(w * scale), int(h * scale))), cv2.COLOR_BGR2GRAY)
+brightness = gray.mean()
 laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
 
 blur_r = classify_blur(laplacian_var)
+bright_r = classify_brightness(brightness)
 
 
 print(f"Blur:       {laplacian_var:.2f} → {blur_r}")
+print(f"Brightness: {brightness:.2f} → {bright_r}")
