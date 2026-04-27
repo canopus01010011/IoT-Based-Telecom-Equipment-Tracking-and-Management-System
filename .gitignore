@@ -64,7 +64,19 @@ web_modules/
 
 # Yarn Integrity file
 .yarn-integrity
+# Virtual environment
+venv/
 
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Model cache (optional, these can be large)
+.cache/
 # dotenv environment variable files
 .env
 .env.*
