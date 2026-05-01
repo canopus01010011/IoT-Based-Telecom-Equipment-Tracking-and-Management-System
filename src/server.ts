@@ -1,0 +1,52 @@
+import app from './app.js';
+import { createServer } from 'http';
+import sequelize from './config/database.js';
+import { initializeSocket } from './sockets/socketHandler.js';
+import { startMQTT } from './mqtt/mqttBridge.js';
+
+const PORT = process.env.PORT || 5000;
+
+async function startServer() {
+  try {
+    // Test database connection
+    await sequelize.authenticate();
+    console.log('✅ Database connection established');
+
+    // Sync database (development only)
+    if (process.env.NODE_ENV === 'development') {
+      await sequelize.sync({ alter: true });
+      console.log('✅ Database synchronized');
+    }
+
+    // Create HTTP server
+    const httpServer = createServer(app);
+    
+    // Initialize Socket.IO
+    initializeSocket(httpServer);
+    
+    // Start MQTT Bridge
+    startMQTT();
+    
+    // Start server
+    httpServer.listen(PORT, () => {
+      console.log(`
+╔══════════════════════════════════════════════════════════╗
+║                                                          ║
+║   🚀 EquipTrack Backend -         Running               ║
+║                                                          ║
+║   📍 Server: http://localhost:${PORT}                   ║
+║   💚 Health: http://localhost:${PORT}/health            ║
+║   🔌 Socket.IO: Active                                  ║
+║   📡 MQTT Bridge: Connected to ${process.env.MQTT_HOST || 'localhost'}:${process.env.MQTT_PORT || '1883'}
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+      `);
+    });
+    
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
