@@ -1,47 +1,71 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  Dimensions,
-  StyleSheet,
-  Image,
-  Pressable,
-  ScrollView,
-} from "react-native";
-import { Switch } from "react-native";
-import { useRouter } from "expo-router";
+import { Gear } from "@/components/UI/Gear";
 import { colors } from "@/constants/theme";
-import { Gear } from '@/components/Gear';
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "expo-router";
 import {
-  User,
+  Bell,
+  ChevronRight,
+  LogOut,
   Mail,
   Phone,
   Settings,
-  Bell,
-  LogOut,
-  ChevronRight,
+  User,
 } from "lucide-react-native";
+import React, { useState } from "react";
+import {
+  Dimensions,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 
-const { width, height } = Dimensions.get('window');
-
+const { width, height } = Dimensions.get("window");
 
 export default function ProfileScreen() {
   const router = useRouter();
-const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const user = {
-    name: "Abedmadjid Teboun",
-    role: "Technician",
-    email: "abedmadjid@gmail.com",
-    phone: "0550000000",
-    avatar: null,
+  const { user, logout } = useAuth();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const handleLogout = () => {
+    logout();
+    router.replace("/");
   };
+  if (!user) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.text}>You are not signed in yet.</Text>
+        <Pressable style={styles.button} onPress={() => router.push("/login")}>
+          <Text style={styles.buttonText}>Go to Login</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
-      
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 120 }}
+    >
+      {/* Background */}
+      <Gear
+        size={160}
+        top={height * 0.04}
+        left={width * -0.04}
+        duration={20000}
+        opacity={0.15}
+      />
+      <Gear
+        size={120}
+        top={height * 0.5}
+        left={width * 0.8}
+        duration={18000}
+        opacity={0.12}
+        reverse
+      />
+
       {/* HEADER */}
-        <Gear size={160} top={height * 0.04} left={width * -0.04} duration={20000} opacity={0.15} />
-            <Gear size={120} top={height * 0.5} left={width * 0.8} duration={18000} opacity={0.12} reverse />
       <View style={styles.header}>
         <View style={styles.avatar}>
           <User size={40} color={colors.primary} />
@@ -56,10 +80,16 @@ const [notificationsEnabled, setNotificationsEnabled] = useState(true);
         </View>
       </View>
 
-      {/* INFO CARD */}
+      {/* INFO */}
       <View style={styles.card}>
-        <InfoRow icon={<Mail size={18} color={colors.primary} />} text={user.email} />
-        <InfoRow icon={<Phone size={18} color={colors.primary} />} text={user.phone} />
+        <InfoRow
+          icon={<Mail size={18} color={colors.primary} />}
+          text={user.email}
+        />
+        <InfoRow
+          icon={<Phone size={18} color={colors.primary} />}
+          text={user.phone}
+        />
       </View>
 
       {/* STATS */}
@@ -72,42 +102,50 @@ const [notificationsEnabled, setNotificationsEnabled] = useState(true);
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Settings</Text>
 
-<MenuItem
-  icon={<Settings size={18} />}
-  label="Account Settings"
-  onPress={() => router.push("../account-settings")}
-/>
-<View style={styles.menuItem}>
-  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-    <Bell size={18} />
-    <Text style={styles.menuText}>Notifications</Text>
-  </View>
+        <MenuItem
+          icon={<Settings size={18} />}
+          label="Account Settings"
+          onPress={() => router.push("/screens/account-settings")}
+        />
 
-  <Switch
-    value={notificationsEnabled}
-    onValueChange={setNotificationsEnabled}
-    trackColor={{ false: "#374151", true: "#3b82f6" }}
-    thumbColor="white"
-  />
-</View>
-<MenuItem
-  icon={<User size={18} />}
-  label="Help & Support"
-  onPress={() => router.push("../help-support")}
-/>      </View>
+        <View style={styles.menuItem}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Bell size={18} />
+            <Text style={styles.menuText}>Notifications</Text>
+          </View>
+
+          <Switch
+            value={notificationsEnabled}
+            onValueChange={setNotificationsEnabled}
+            trackColor={{ false: "#374151", true: "#3b82f6" }}
+            thumbColor="white"
+          />
+        </View>
+
+        <MenuItem
+          icon={<User size={18} />}
+          label="Help & Support"
+          onPress={() => router.push("/screens/help-support")}
+        />
+      </View>
 
       {/* LOGOUT */}
-      <Pressable style={styles.logoutBtn}>
+      <Pressable style={styles.logoutBtn} onPress={handleLogout}>
         <LogOut size={18} color="white" />
         <Text style={styles.logoutText}>Logout</Text>
       </Pressable>
-
     </ScrollView>
   );
 }
 
+/* ===== UI HELPERS (should move later to components/ui) ===== */
 
-function InfoRow({ icon, text }) {
+type InfoRowProps = {
+  icon: React.ReactNode;
+  text: string | undefined;
+};
+
+function InfoRow({ icon, text }: InfoRowProps) {
   return (
     <View style={styles.infoRow}>
       {icon}
@@ -116,7 +154,12 @@ function InfoRow({ icon, text }) {
   );
 }
 
-function StatCard({ label, value }) {
+type StatCardProps = {
+  label: string;
+  value: string;
+};
+
+function StatCard({ label, value }: StatCardProps) {
   return (
     <View style={styles.statCard}>
       <Text style={styles.statValue}>{value}</Text>
@@ -125,7 +168,13 @@ function StatCard({ label, value }) {
   );
 }
 
-function MenuItem({ icon, label, onPress }) {
+type MenuItemProps = {
+  icon: React.ReactNode;
+  label: string;
+  onPress: () => void;
+};
+
+function MenuItem({ icon, label, onPress }: MenuItemProps) {
   return (
     <Pressable style={styles.menuItem} onPress={onPress}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
@@ -136,7 +185,6 @@ function MenuItem({ icon, label, onPress }) {
     </Pressable>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -249,6 +297,32 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "700",
     marginBottom: 10,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+
+  text: {
+    color: "white",
+    fontSize: 16,
+    marginBottom: 18,
+    textAlign: "center",
+  },
+
+  button: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+
+  buttonText: {
+    color: "white",
+    fontWeight: "700",
   },
 
   menuItem: {

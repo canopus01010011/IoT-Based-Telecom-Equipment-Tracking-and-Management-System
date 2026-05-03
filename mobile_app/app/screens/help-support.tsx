@@ -1,25 +1,25 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  TextInput,
-  Alert,
-  Linking,
-} from "react-native";
 import { colors } from "@/constants/theme";
 import {
-  HelpCircle,
-  Phone,
-  Mail,
   ChevronDown,
+  HelpCircle,
+  Mail,
+  Phone,
   Send,
 } from "lucide-react-native";
+import React, { useState } from "react";
+import {
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 export default function HelpSupport() {
-  const [expanded, setExpanded] = useState(null);
+  const [expanded, setExpanded] = useState<number | null>(null);
   const [message, setMessage] = useState("");
 
   const faqs = [
@@ -40,7 +40,7 @@ export default function HelpSupport() {
     },
   ];
 
-  const toggleFAQ = (id) => {
+  const toggleFAQ = (id: number) => {
     setExpanded(expanded === id ? null : id);
   };
 

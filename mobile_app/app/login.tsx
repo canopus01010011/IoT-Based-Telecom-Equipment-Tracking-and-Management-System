@@ -1,5 +1,4 @@
-import { useRouter } from "expo-router";
-import { ChevronRight, Eye, EyeOff, Truck, Wrench } from "lucide-react-native";
+import { ChevronRight, Eye, EyeOff } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -17,34 +16,17 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { Gear } from "@/components/Gear";
+import { Gear } from "@/components/UI/Gear";
+import { ROLES } from "@/constants/roles";
 import { colors } from "@/constants/theme";
+import { useLogin } from "@/hooks/useLogin";
 
 const { width, height } = Dimensions.get("window");
 
-type Role = "driver" | "technician";
-
-const ROLES = [
-  {
-    id: "technician" as Role,
-    label: "Technician",
-    icon: Wrench,
-    desc: "Install & manage equipment",
-  },
-  {
-    id: "driver" as Role,
-    label: "Driver",
-    icon: Truck,
-    desc: "Deliver telecom equipment",
-  },
-];
-
 export default function LoginScreen() {
-  const router = useRouter();
+  const { role, setRole, userId, setUserId, password, setPassword, login } =
+    useLogin();
 
-  const [role, setRole] = useState<Role>("technician");
-  const [userId, setUserId] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const btnScale = useSharedValue(1);
@@ -62,11 +44,7 @@ export default function LoginScreen() {
   }
 
   function handleLogin() {
-    if (role === "technician") {
-      router.push("/tabs/Home");
-    } else {
-      router.push("/driver/dashboard");
-    }
+    login();
   }
 
   return (
@@ -89,6 +67,7 @@ export default function LoginScreen() {
       />
 
       <View style={styles.content}>
+        {/* Logo */}
         <View style={styles.logoWrapper}>
           <Image
             source={require("@/assets/images/telcotrack-logo.png")}
@@ -96,6 +75,7 @@ export default function LoginScreen() {
           />
         </View>
 
+        {/* Title */}
         <Text style={styles.title}>
           <Text style={styles.titleWhite}>Telco</Text>
           <Text style={styles.titleAccent}>Track</Text>
@@ -113,11 +93,7 @@ export default function LoginScreen() {
                 onPress={() => setRole(r.id)}
                 style={[styles.roleCard, selected && styles.roleSelected]}
               >
-                <Icon
-                  name={r.id === "technician" ? "tools" : "truck"}
-                  size={24}
-                  color={selected ? colors.primary : "#9ca3af"}
-                />
+                <Icon size={24} color={selected ? colors.primary : "#9ca3af"} />
 
                 <Text
                   style={[styles.roleTitle, selected && { color: "white" }]}
@@ -163,6 +139,7 @@ export default function LoginScreen() {
           </Pressable>
         </View>
 
+        {/* Login button */}
         <Animated.View style={btnStyle}>
           <Pressable
             style={styles.button}
@@ -180,7 +157,6 @@ export default function LoginScreen() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -290,11 +266,5 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontWeight: "700",
-  },
-
-  demoText: {
-    textAlign: "center",
-    fontSize: 12,
-    color: "#6b7280",
   },
 });

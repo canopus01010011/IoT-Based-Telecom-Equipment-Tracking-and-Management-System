@@ -13,18 +13,21 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { colors } from "@/constants/theme";
 import { Camera, Send, Trash2 } from "lucide-react-native";
+import { useAuth } from "@/hooks/useAuth";
+import { useReport } from "@/hooks/useReport";
 
 export default function CreateReport() {
-  // 🔐 Simulated user
-  const user = { role: "technician" };
+  const { user } = useAuth();
+  const { sendReport } = useReport();
 
   const { missionId, siteName } = useLocalSearchParams();
 
   const [reportText, setReportText] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // 🚫 BLOCK NON-TECHNICIANS
-  if (user.role !== "technician") {
+  if (user?.role !== "technician") {
     return (
       <View style={styles.center}>
         <Text style={styles.error}>Access Denied</Text>
@@ -33,7 +36,6 @@ export default function CreateReport() {
     );
   }
 
-  // 📸 PICK IMAGE
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -49,59 +51,52 @@ export default function CreateReport() {
 
     if (!result.canceled) {
       const newImages = result.assets.map((a) => a.uri);
-      setImages([...images, ...newImages]);
+      setImages((prev) => [...prev, ...newImages]);
     }
   };
 
-  // 🗑 REMOVE IMAGE
   const removeImage = (uri: string) => {
-    setImages(images.filter((img) => img !== uri));
+    setImages((prev) => prev.filter((img) => img !== uri));
   };
 
-  // 🚀 SUBMIT REPORT
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!reportText.trim()) {
       Alert.alert("Error", "Please write your report");
       return;
     }
 
-    const report = {
-      missionId,
-      siteName,
-      text: reportText,
-      images,
-      date: new Date(),
-    };
+    try {
+      setLoading(true);
 
-    console.log("REPORT SENT:", report);
+      await sendReport({
+        missionId: String(missionId),
+        text: reportText,
+        images,
+      });
 
-    Alert.alert("Success", "Report sent to admin");
+      Alert.alert("Success", "Report sent");
 
-    setReportText("");
-    setImages([]);
+      setReportText("");
+      setImages([]);
+    } catch (err) {
+      Alert.alert("Error", "Failed to send report");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScrollView style={styles.container}>
-      
-      {/* ✅ FIXED: wrapped properly */}
       <View>
         <Text style={styles.title}>Create Report</Text>
-
         <Text style={styles.subtitle}>
           Describe the mission outcome and attach images
         </Text>
 
-        <Text style={styles.meta}>
-          Mission ID: {missionId}
-        </Text>
-
-        <Text style={styles.meta}>
-          Site: {siteName}
-        </Text>
+        <Text style={styles.meta}>Mission ID: {missionId}</Text>
+        <Text style={styles.meta}>Site: {siteName}</Text>
       </View>
 
-      {/* INPUT */}
       <TextInput
         style={styles.input}
         placeholder="Write your report..."
@@ -111,18 +106,15 @@ export default function CreateReport() {
         onChangeText={setReportText}
       />
 
-      {/* IMAGE BUTTON */}
       <Pressable style={styles.uploadBtn} onPress={pickImage}>
         <Camera color="white" size={18} />
         <Text style={styles.uploadText}>Upload Images</Text>
       </Pressable>
 
-      {/* IMAGE PREVIEW */}
       <View style={styles.imageContainer}>
         {images.map((img, i) => (
           <View key={i} style={styles.imageWrapper}>
             <Image source={{ uri: img }} style={styles.image} />
-
             <Pressable
               style={styles.deleteBtn}
               onPress={() => removeImage(img)}
@@ -133,10 +125,15 @@ export default function CreateReport() {
         ))}
       </View>
 
-      {/* SUBMIT */}
-      <Pressable style={styles.submitBtn} onPress={handleSubmit}>
+      <Pressable
+        style={[styles.submitBtn, loading && { opacity: 0.6 }]}
+        onPress={handleSubmit}
+        disabled={loading}
+      >
         <Send size={18} color="white" />
-        <Text style={styles.submitText}>Send Report</Text>
+        <Text style={styles.submitText}>
+          {loading ? "Sending..." : "Send Report"}
+        </Text>
       </Pressable>
     </ScrollView>
   );
