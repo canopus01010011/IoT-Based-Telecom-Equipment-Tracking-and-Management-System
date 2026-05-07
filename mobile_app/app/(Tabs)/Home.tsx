@@ -32,7 +32,6 @@ export default function Dashboard() {
 
   return (
     <View style={styles.container}>
-      {/* Background */}
       <Gear
         size={160}
         top={height * 0.04}
@@ -50,7 +49,6 @@ export default function Dashboard() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Welcome Back</Text>
@@ -71,7 +69,6 @@ export default function Dashboard() {
           </Pressable>
         </View>
 
-        {/* Stats */}
         <View style={styles.statsRow}>
           <StatCard
             label="Active"
@@ -85,7 +82,6 @@ export default function Dashboard() {
           />
         </View>
 
-        {/* Missions */}
         <Text style={styles.sectionTitle}>Active Missions</Text>
 
         {missions.map((m) => (
@@ -140,7 +136,6 @@ export default function Dashboard() {
   );
 }
 
-/* TEMP (move later to components/ui) */
 function StatCard({ label, value, icon }) {
   return (
     <View style={styles.statCard}>
@@ -151,7 +146,6 @@ function StatCard({ label, value, icon }) {
   );
 }
 
-/* Styles */
 const styles = StyleSheet.create({
   container: {
     flex: 1,

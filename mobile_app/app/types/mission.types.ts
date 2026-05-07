@@ -1,13 +1,11 @@
 export type UserRole = "technician" | "driver";
 
-/* DRIVER */
 export interface Driver {
   id: string;
   firstName: string;
   lastName: string;
 }
 
-/* GPS DEVICE */
 export interface GPSDevice {
   GPS_ID: string;
   Device_serial_number: string;
@@ -15,7 +13,6 @@ export interface GPSDevice {
   Device_status: string;
 }
 
-/* EQUIPMENT */
 export interface Equipment {
   Eq_ID: string;
   Eq_type: string;
@@ -25,14 +22,12 @@ export interface Equipment {
   Eq_status: string;
 }
 
-/* SITE */
 export interface Site {
   Site_ID: string;
   Site_name: string;
   Site_address: string;
 }
 
-/* MISSION */
 export interface Mission {
   Mission_ID: string;
   Mission_type: string;
@@ -47,7 +42,6 @@ export interface Mission {
   equipment: Equipment[];
 }
 
-/* API RESPONSE */
 export interface MissionResponse {
   success: boolean;
   data: Mission;

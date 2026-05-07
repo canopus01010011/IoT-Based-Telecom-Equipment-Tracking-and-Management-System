@@ -28,7 +28,6 @@ export default function MapScreen() {
   const showDirections =
     GOOGLE_API_KEY && GOOGLE_API_KEY !== "YOUR_GOOGLE_API_KEY";
 
-  // 🟡 Loading state
   if (locationLoading) {
     return (
       <View style={styles.center}>
@@ -56,13 +55,10 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <MapView style={styles.map} region={region} showsUserLocation={enabled}>
-        {/* User */}
         {location && <Marker coordinate={location} title="You" />}
 
-        {/* Technician */}
         <Marker coordinate={technician} title={activeMission.site} />
 
-        {/* Route */}
         {location && showDirections && (
           <MapViewDirections
             origin={location}
@@ -78,7 +74,6 @@ export default function MapScreen() {
         )}
       </MapView>
 
-      {/* Mission Card */}
       <View style={styles.card}>
         <Text style={styles.title}>{activeMission.site}</Text>
         <Text style={styles.sub}>{activeMission.company}</Text>

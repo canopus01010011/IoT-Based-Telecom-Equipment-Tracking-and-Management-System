@@ -9,17 +9,17 @@ export function useLogin() {
   const { login: authLogin } = useAuth();
 
   const [role, setRole] = useState<Role>("technician");
-  const [userId, setUserId] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   async function login() {
-    if (!userId.trim() || !password.trim()) {
-      Alert.alert("Login required", "Please enter your ID and password.");
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Login required", "Please enter your email and password.");
       return;
     }
 
     try {
-      await authLogin(userId.trim(), password.trim(), role);
+      await authLogin(email.trim(), password.trim(), role);
       router.replace("./(Tabs)/Home");
     } catch (error: unknown) {
       const message =
@@ -33,8 +33,8 @@ export function useLogin() {
   return {
     role,
     setRole,
-    userId,
-    setUserId,
+    email,
+    setEmail,
     password,
     setPassword,
     login,

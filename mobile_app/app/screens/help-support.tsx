@@ -66,13 +66,11 @@ export default function HelpSupport() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <HelpCircle size={28} color={colors.primary} />
         <Text style={styles.title}>Help & Support</Text>
       </View>
 
-      {/* CONTACT */}
       <View style={styles.card}>
         <Text style={styles.section}>Contact Support</Text>
 
@@ -87,7 +85,6 @@ export default function HelpSupport() {
         </Pressable>
       </View>
 
-      {/* FAQ */}
       <View style={styles.card}>
         <Text style={styles.section}>FAQ</Text>
 
@@ -108,7 +105,6 @@ export default function HelpSupport() {
         ))}
       </View>
 
-      {/* MESSAGE */}
       <View style={styles.card}>
         <Text style={styles.section}>Send a Request</Text>
 
@@ -130,9 +126,7 @@ export default function HelpSupport() {
   );
 }
 
-//
-// 🎨 STYLES
-//
+
 
 const styles = StyleSheet.create({
   container: {

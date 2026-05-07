@@ -12,9 +12,7 @@ import { colors } from "@/constants/theme";
 import { Gear } from "@/components/UI/Gear";
 import { FileText, QrCode, Truck } from "lucide-react-native";
 
-// 🔴 replace later
-// import { useAuth } from "@/hooks/useAuth";
-// import { useMissions } from "@/hooks/useMissions";
+
 
 const { width, height } = Dimensions.get("window");
 
@@ -22,10 +20,8 @@ export default function MissionDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
-  // 🔴 TEMP
   const user = { role: "technician" };
 
-  // 🔴 TEMP DATA (later from useMissions)
   const data = {
     mission: {
       Mission_ID: "M-001",
@@ -57,12 +53,14 @@ export default function MissionDetails() {
         Eq_type: "Router",
         Eq_Serial_number: "SN12345",
         Eq_model: "Huawei AX3",
+            Eq_quantity: "1",
       },
       {
         Eq_ID: "EQ-02",
         Eq_type: "Antenna",
         Eq_Serial_number: "SN67890",
         Eq_model: "Nokia AirScale",
+        Eq_quantity: "2",
       },
     ],
   };
@@ -74,11 +72,9 @@ export default function MissionDetails() {
 
       <ScrollView contentContainerStyle={styles.content}>
         
-        {/* HEADER */}
         <Text style={styles.title}>{data.site.Site_name}</Text>
         <Text style={styles.subtitle}>{data.site.Site_address}</Text>
 
-        {/* MISSION */}
         <Section title="Mission">
           <Info label="ID" value={data.mission.Mission_ID} />
           <Info label="Type" value={data.mission.Mission_type} />
@@ -87,14 +83,12 @@ export default function MissionDetails() {
           <Info label="End" value={data.mission.end_date} />
         </Section>
 
-        {/* SITE */}
         <Section title="Site">
           <Info label="ID" value={data.site.Site_ID} />
           <Info label="Name" value={data.site.Site_name} />
           <Info label="Address" value={data.site.Site_address} />
         </Section>
 
-        {/* DRIVER (ONLY TECHNICIAN) */}
         {user.role === "technician" && (
           <Section title="Driver">
             <Info label="ID" value={data.driver.id} />
@@ -102,7 +96,6 @@ export default function MissionDetails() {
           </Section>
         )}
 
-        {/* GPS */}
         <Section title="GPS Device">
           {user.role === "technician" ? (
             <>
@@ -116,7 +109,6 @@ export default function MissionDetails() {
           )}
         </Section>
 
-        {/* EQUIPMENT (ONLY TECHNICIAN) */}
         {user.role === "technician" && (
           <>
             <Text style={styles.sectionTitle}>Equipment</Text>
@@ -126,13 +118,13 @@ export default function MissionDetails() {
                 <Info label="Type" value={eq.Eq_type} />
                 <Info label="Model" value={eq.Eq_model} />
                 <Info label="Serial" value={eq.Eq_Serial_number} />
+                <Info label="Quantity" value={eq.Eq_quantity} />
 
               </View>
             ))}
           </>
         )}
 
-        {/* ACTIONS */}
         {user.role === "technician" && (
           <>
             <GlowButton
@@ -169,7 +161,6 @@ export default function MissionDetails() {
   );
 }
 
-/* UI COMPONENTS */
 
 function Section({ title, children }: any) {
   return (
@@ -198,7 +189,6 @@ function GlowButton({ icon, text, onPress }: any) {
   );
 }
 
-/* STYLES */
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },

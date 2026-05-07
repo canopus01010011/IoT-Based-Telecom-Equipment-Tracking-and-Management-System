@@ -18,7 +18,6 @@ export default function MissionsScreen() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
-  // Filtering logic
   const filtered = missions.filter((m) => {
     const matchSearch =
       m.site.toLowerCase().includes(search.toLowerCase()) ||
@@ -39,7 +38,6 @@ export default function MissionsScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        {/* Search */}
         <View style={styles.searchBox}>
           <Search size={18} color="#9ca3af" />
           <TextInput
@@ -51,7 +49,6 @@ export default function MissionsScreen() {
           />
         </View>
 
-        {/* Filters */}
         <View style={styles.filters}>
           {["All", "Today", "Completed", "Pending"].map((f) => (
             <Pressable
@@ -68,7 +65,6 @@ export default function MissionsScreen() {
           ))}
         </View>
 
-        {/* Today */}
         {today.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Today</Text>
@@ -78,7 +74,6 @@ export default function MissionsScreen() {
           </>
         )}
 
-        {/* Completed */}
         {completed.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Completed</Text>

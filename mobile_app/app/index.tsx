@@ -22,7 +22,6 @@ import Animated, {
 
 const { width, height } = Dimensions.get("window");
 
-// All gears — positions are percentages of screen so they scale
 const GEARS = [
   { size: 160, topPct: 0.04, leftPct: -0.04, duration: 20000, opacity: 0.15 },
   {
@@ -183,7 +182,6 @@ export default function SplashScreen() {
             accessibilityLabel="Get started"
           >
             <Text style={styles.buttonText}>Get Started</Text>
-            {/* Simple arrow icon */}
             <Text style={[styles.buttonText, { fontSize: 18 }]}> →</Text>
           </Pressable>
         </Animated.View>

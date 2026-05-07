@@ -6,9 +6,6 @@ export interface MissionResponse {
   data: Mission;
 }
 
-/**
- * Fetch ONE mission by ID
- */
 export async function getMissionById(id: string): Promise<Mission> {
   try {
     const response = await api.get<MissionResponse>(`/missions/${id}`);
@@ -23,9 +20,7 @@ export async function getMissionById(id: string): Promise<Mission> {
   }
 }
 
-/**
- * Fetch ALL missions (for list screen)
- */
+
 export async function getAllMissions(): Promise<Mission[]> {
   try {
     const response = await api.get<{ success: boolean; data: Mission[] }>(

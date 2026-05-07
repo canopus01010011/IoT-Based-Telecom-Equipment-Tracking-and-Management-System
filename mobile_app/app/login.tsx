@@ -24,7 +24,7 @@ import { useLogin } from "@/hooks/useLogin";
 const { width, height } = Dimensions.get("window");
 
 export default function LoginScreen() {
-  const { role, setRole, userId, setUserId, password, setPassword, login } =
+  const { role, setRole, email, setEmail, password, setPassword, login } =
     useLogin();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -49,7 +49,6 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Background gears */}
       <Gear
         size={160}
         top={height * 0.04}
@@ -67,7 +66,6 @@ export default function LoginScreen() {
       />
 
       <View style={styles.content}>
-        {/* Logo */}
         <View style={styles.logoWrapper}>
           <Image
             source={require("@/assets/images/telcotrack-logo.png")}
@@ -75,13 +73,11 @@ export default function LoginScreen() {
           />
         </View>
 
-        {/* Title */}
         <Text style={styles.title}>
-          <Text style={styles.titleWhite}>Telco</Text>
+          <Text style={styles.titleWhite}>Erc</Text>
           <Text style={styles.titleAccent}>Track</Text>
         </Text>
 
-        {/* Role selector */}
         <View style={styles.roleRow}>
           {ROLES.map((r) => {
             const Icon = r.icon;
@@ -107,16 +103,14 @@ export default function LoginScreen() {
           })}
         </View>
 
-        {/* ID input */}
         <TextInput
-          placeholder={`${role} ID`}
+          placeholder="Email"
           placeholderTextColor="#6b7280"
           style={styles.input}
-          value={userId}
-          onChangeText={setUserId}
+          value={email}
+          onChangeText={setEmail}
         />
 
-        {/* Password */}
         <View style={styles.passwordWrapper}>
           <TextInput
             placeholder="Password"
@@ -139,7 +133,6 @@ export default function LoginScreen() {
           </Pressable>
         </View>
 
-        {/* Login button */}
         <Animated.View style={btnStyle}>
           <Pressable
             style={styles.button}

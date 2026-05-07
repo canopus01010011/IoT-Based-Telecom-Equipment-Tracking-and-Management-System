@@ -12,7 +12,6 @@ import { colors } from "@/constants/theme";
 export default function ReportView() {
   const { missionId } = useLocalSearchParams();
 
-  // 🔴 STATIC DATA (later replace with API)
   const report = {
     missionId: "M-001",
     text: "Installation completed successfully. All equipment tested and working correctly. No issues detected.",
@@ -23,7 +22,6 @@ export default function ReportView() {
     ],
   };
 
-  // 🚫 If no report (simulate)
   if (missionId !== report.missionId) {
     return (
       <View style={styles.center}>
@@ -44,13 +42,11 @@ export default function ReportView() {
         Submitted: {report.date}
       </Text>
 
-      {/* REPORT TEXT */}
       <View style={styles.card}>
         <Text style={styles.section}>Report Details</Text>
         <Text style={styles.text}>{report.text}</Text>
       </View>
 
-      {/* IMAGES */}
       <Text style={styles.section}>Attached Images</Text>
 
       <View style={styles.images}>
@@ -61,10 +57,6 @@ export default function ReportView() {
     </ScrollView>
   );
 }
-
-//
-// 🎨 STYLES
-//
 
 const styles = StyleSheet.create({
   container: {

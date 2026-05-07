@@ -1,5 +1,3 @@
-// services/auth.service.ts
-
 import api from "./api";
 
 export const updateUser = async (data: {

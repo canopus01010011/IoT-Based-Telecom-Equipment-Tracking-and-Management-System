@@ -18,7 +18,6 @@ import {
 export default function NotificationsScreen() {
   const router = useRouter();
 
-  //  STATIC DATA (replace later with backend)
   const notifications = [
     {
       id: "1",
@@ -46,7 +45,6 @@ export default function NotificationsScreen() {
     },
   ];
 
-  // 🎯 ICON BASED ON TYPE
   const getIcon = (type: string) => {
     switch (type) {
       case "mission":
@@ -60,7 +58,6 @@ export default function NotificationsScreen() {
     }
   };
 
-  // 📦 RENDER ITEM
   const renderItem = ({ item }) => (
     <Pressable style={[styles.card, !item.read && styles.unread]}>
       <View style={styles.icon}>{getIcon(item.type)}</View>
@@ -75,12 +72,10 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Notifications</Text>
       </View>
 
-      {/* LIST */}
       <FlatList
         data={notifications}
         keyExtractor={(item) => item.id}
@@ -92,9 +87,6 @@ export default function NotificationsScreen() {
 }
 
 //
-// 🎨 STYLES
-//
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

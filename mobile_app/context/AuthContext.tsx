@@ -16,7 +16,7 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
-  login: (id: string, password: string, role: Role) => Promise<void>;
+  login: (email: string, password: string, role: Role) => Promise<void>;
   logout: () => void;
 };
 
@@ -25,16 +25,14 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  // LOGIN (ID + PASSWORD)
-  const login = async (id: string, password: string, role: Role) => {
-    // 🔸 TEMP MOCK (replace later with backend)
-    if (id === "Abedmadjid" && password === "1234") {
+  const login = async (email: string, password: string, role: Role) => {
+    if (email === "souheil@gmail.com" && password === "1234") {
       setUser({
-        id: "Abedmadjid Teboun",
+        id: "Guellil Souheil",
         name: role === "driver" ? "Driver User" : "Technician User",
         role,
         phone: role === "driver" ? "+213500000000" : "+213600000000",
-        email: `${role}@example.com`,
+        email: email,
       });
     } else {
       throw new Error("Invalid credentials");
@@ -50,7 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// hook to use context
 export function useAuthContext() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("AuthContext not found");

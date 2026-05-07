@@ -12,7 +12,6 @@ import {
   View,
 } from "react-native";
 
-// Input component
 const Input = ({ label, value, onChange, secure = false }: any) => (
   <View style={styles.inputGroup}>
     <Text style={styles.label}>{label}</Text>
@@ -35,7 +34,6 @@ export default function AccountSettings() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
-  // ✅ preload user data
   useEffect(() => {
     if (user) {
       setName(user.name);
@@ -129,7 +127,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
 
-    // glow
     shadowColor: "#3b82f6",
     shadowOpacity: 0.6,
     shadowRadius: 10,

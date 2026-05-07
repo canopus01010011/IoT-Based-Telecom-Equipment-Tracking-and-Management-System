@@ -48,7 +48,6 @@ export default function ProfileScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 120 }}
     >
-      {/* Background */}
       <Gear
         size={160}
         top={height * 0.04}
@@ -65,7 +64,6 @@ export default function ProfileScreen() {
         reverse
       />
 
-      {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.avatar}>
           <User size={40} color={colors.primary} />
@@ -74,13 +72,9 @@ export default function ProfileScreen() {
         <Text style={styles.name}>{user.name}</Text>
         <Text style={styles.role}>{user.role}</Text>
 
-        <View style={styles.status}>
-          <View style={styles.dot} />
-          <Text style={styles.statusText}>Online</Text>
-        </View>
+
       </View>
 
-      {/* INFO */}
       <View style={styles.card}>
         <InfoRow
           icon={<Mail size={18} color={colors.primary} />}
@@ -92,13 +86,11 @@ export default function ProfileScreen() {
         />
       </View>
 
-      {/* STATS */}
       <View style={styles.statsRow}>
         <StatCard label="Missions" value="3" />
         <StatCard label="Completed" value="15" />
       </View>
 
-      {/* SETTINGS */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Settings</Text>
 
@@ -129,7 +121,6 @@ export default function ProfileScreen() {
         />
       </View>
 
-      {/* LOGOUT */}
       <Pressable style={styles.logoutBtn} onPress={handleLogout}>
         <LogOut size={18} color="white" />
         <Text style={styles.logoutText}>Logout</Text>
@@ -137,8 +128,6 @@ export default function ProfileScreen() {
     </ScrollView>
   );
 }
-
-/* ===== UI HELPERS (should move later to components/ui) ===== */
 
 type InfoRowProps = {
   icon: React.ReactNode;
@@ -220,24 +209,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  status: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 6,
-    gap: 6,
-  },
 
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#22c55e",
-  },
-
-  statusText: {
-    color: "#22c55e",
-    fontSize: 12,
-  },
 
   card: {
     marginTop: 20,

@@ -1,35 +1,28 @@
-// src/theme/colors.js
 export const colors = {
-  // Primary Palette
   primary: '#00d4ff',
   primaryDark: '#0099cc',
   primaryLight: '#66e5ff',
   secondary: '#0077b3',
-  
-  // Background Colors
+
   background: '#0a0a0a',
   backgroundLight: '#1a1a2e',
   backgroundCard: '#16213e',
   surface: '#0f3460',
-  
-  // Text Colors
+
   text: '#ffffff',
   textSecondary: '#a0a0a0',
   textMuted: '#6b7280',
-  
-  // Accent Colors
+
   accent: '#00f5ff',
   success: '#00d9a5',
   warning: '#ffb800',
   error: '#ff4757',
   info: '#3498db',
-  
-  // Gradient Colors
+
   gradientStart: '#0a0a0a',
   gradientMiddle: '#1a1a2e',
   gradientEnd: '#16213e',
-  
-  // Utility
+
   border: 'rgba(0, 212, 255, 0.2)',
   overlay: 'rgba(0, 0, 0, 0.7)',
   glow: 'rgba(0, 212, 255, 0.3)',

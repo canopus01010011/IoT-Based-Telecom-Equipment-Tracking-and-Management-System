@@ -26,7 +26,6 @@ export default function CreateReport() {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 🚫 BLOCK NON-TECHNICIANS
   if (user?.role !== "technician") {
     return (
       <View style={styles.center}>
@@ -139,9 +138,7 @@ export default function CreateReport() {
   );
 }
 
-//
-// 🎨 STYLES
-//
+
 
 const styles = StyleSheet.create({
   container: {
