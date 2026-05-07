@@ -1,55 +1,74 @@
-import React, { useState } from "react";
+import { colors } from "@/constants/theme";
+import { useAuth } from "@/hooks/useAuth";
+import { Save } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
+  Alert,
   Pressable,
   ScrollView,
-  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
-import { colors } from "@/constants/theme";
-import { Save } from "lucide-react-native";
+
+const Input = ({ label, value, onChange, secure = false }: any) => (
+  <View style={styles.inputGroup}>
+    <Text style={styles.label}>{label}</Text>
+    <TextInput
+      style={styles.input}
+      placeholder={label}
+      value={value}
+      onChangeText={onChange}
+      secureTextEntry={secure}
+      placeholderTextColor="#999"
+    />
+  </View>
+);
 
 export default function AccountSettings() {
-  const [name, setName] = useState("Abedmadjid Teboun");
-  const [email, setEmail] = useState("abedmadjid@gmail.com");
-  const [phone, setPhone] = useState("0550000000");
+  const { user, updateUser } = useAuth();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email || "");
+      setPhone(user.phone || "");
+    }
+  }, [user]);
+
+  const handleSave = async () => {
     if (!name || !email || !phone) {
       Alert.alert("Error", "Please fill all fields");
       return;
     }
 
-    // 🔴 Later connect to backend
-    const updatedUser = {
-      name,
-      email,
-      phone,
-      password,
-    };
+    try {
+      await updateUser({
+        name,
+        email,
+        phone,
+        password: password || undefined,
+      });
 
-    console.log("UPDATED USER:", updatedUser);
-
-    Alert.alert("Success", "Account updated successfully");
+      Alert.alert("Success", "Account updated successfully");
+    } catch (err) {
+      Alert.alert("Error", "Failed to update account");
+    }
   };
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Account Settings</Text>
 
-      {/* NAME */}
       <Input label="Full Name" value={name} onChange={setName} />
-
-      {/* EMAIL */}
       <Input label="Email" value={email} onChange={setEmail} />
-
-      {/* PHONE */}
       <Input label="Phone Number" value={phone} onChange={setPhone} />
-
-      {/* PASSWORD */}
       <Input
         label="New Password"
         value={password}
@@ -57,7 +76,6 @@ export default function AccountSettings() {
         secure
       />
 
-      {/* SAVE BUTTON */}
       <Pressable style={styles.saveBtn} onPress={handleSave}>
         <Save size={18} color="white" />
         <Text style={styles.saveText}>Save Changes</Text>
@@ -65,32 +83,6 @@ export default function AccountSettings() {
     </ScrollView>
   );
 }
-
-
-type InputProps = {
-  label: string;
-  value: string;
-  onChange: (text: string) => void;
-  secure?: boolean;
-};
-
-function Input({ label, value, onChange, secure = false }: InputProps) {
-  return (
-    <View style={{ marginTop: 16 }}>
-      <Text style={styles.label}>{label}</Text>
-
-      <TextInput
-        value={value}
-        onChangeText={onChange}
-        secureTextEntry={secure}
-        style={styles.input}
-        placeholder={`Enter ${label}`}
-        placeholderTextColor="#6b7280"
-      />
-    </View>
-  );
-}
-
 
 const styles = StyleSheet.create({
   container: {
@@ -104,6 +96,10 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "800",
     marginBottom: 10,
+  },
+
+  inputGroup: {
+    marginBottom: 20,
   },
 
   label: {
@@ -131,7 +127,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
 
-    // glow
     shadowColor: "#3b82f6",
     shadowOpacity: 0.6,
     shadowRadius: 10,

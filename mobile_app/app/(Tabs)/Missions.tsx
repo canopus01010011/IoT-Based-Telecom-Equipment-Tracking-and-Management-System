@@ -1,59 +1,23 @@
+import MissionCard from "@/components/UI/MissionCard";
+import { colors } from "@/constants/theme";
+import { useMissions } from "@/hooks/useMissions";
+import { Search } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
   Pressable,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { colors } from "@/constants/theme";
-import {
-  Search,
-  MapPin,
-  Clock,
-  Building2,
-  Package,
-} from "lucide-react-native";
 
 export default function MissionsScreen() {
-  const router = useRouter();
+  const { missions } = useMissions();
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
-  const missions = [
-    {
-      id: 1,
-      site: "Blida Telecom Tower",
-      company: "Algerie Telecom",
-      status: "Pending",
-      date: "today",
-      time: "10:30",
-      items: 5,
-    },
-    {
-      id: 2,
-      site: "Alger Center Hub",
-      company: "Mobilis",
-      status: "Completed",
-      date: "today",
-      time: "09:00",
-      items: 3,
-    },
-    {
-      id: 3,
-      site: "Boufarik Node",
-      company: "Ooredoo",
-      status: "Completed",
-      date: "old",
-      time: "Yesterday",
-      items: 8,
-    },
-  ];
-
-  // Filter logic
   const filtered = missions.filter((m) => {
     const matchSearch =
       m.site.toLowerCase().includes(search.toLowerCase()) ||
@@ -68,16 +32,12 @@ export default function MissionsScreen() {
     return matchSearch && matchFilter;
   });
 
-  const todayMissions = filtered.filter((m) => m.date === "today");
-  const completedMissions = filtered.filter(
-    (m) => m.status === "Completed"
-  );
+  const today = filtered.filter((m) => m.date === "today");
+  const completed = filtered.filter((m) => m.status === "Completed");
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        
-        {/*Search */}
         <View style={styles.searchBox}>
           <Search size={18} color="#9ca3af" />
           <TextInput
@@ -89,22 +49,15 @@ export default function MissionsScreen() {
           />
         </View>
 
-        {/* Filters */}
         <View style={styles.filters}>
           {["All", "Today", "Completed", "Pending"].map((f) => (
             <Pressable
               key={f}
               onPress={() => setFilter(f)}
-              style={[
-                styles.filterBtn,
-                filter === f && styles.activeFilter,
-              ]}
+              style={[styles.filterBtn, filter === f && styles.activeFilter]}
             >
               <Text
-                style={[
-                  styles.filterText,
-                  filter === f && { color: "white" },
-                ]}
+                style={[styles.filterText, filter === f && { color: "white" }]}
               >
                 {f}
               </Text>
@@ -112,77 +65,27 @@ export default function MissionsScreen() {
           ))}
         </View>
 
-        {/*  Today Missions */}
-        {todayMissions.length > 0 && (
+        {today.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Today</Text>
-            {todayMissions.map((m) => (
-              <MissionCard key={m.id} mission={m} router={router} />
+            {today.map((m) => (
+              <MissionCard key={m.id} mission={m} />
             ))}
           </>
         )}
 
-        {/*  Completed */}
-        {completedMissions.length > 0 && (
+        {completed.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Completed</Text>
-            {completedMissions.map((m) => (
-              <MissionCard key={m.id} mission={m} router={router} />
+            {completed.map((m) => (
+              <MissionCard key={m.id} mission={m} />
             ))}
           </>
         )}
-
       </ScrollView>
     </View>
   );
 }
-
-//Mission Card
-
-function MissionCard({ mission, router }) {
-  return (
-    <Pressable
-      style={styles.card}
-      onPress={() =>
-        router.push({
-          pathname: "/mission-details",
-          params: { id: mission.id },
-        })
-      }
-    >
-      <Text style={styles.site}>{mission.site}</Text>
-
-      <View style={styles.row}>
-        <Building2 size={14} color="#9ca3af" />
-        <Text style={styles.text}>{mission.company}</Text>
-      </View>
-
-      <View style={styles.row}>
-        <Clock size={14} color="#9ca3af" />
-        <Text style={styles.text}>{mission.time}</Text>
-      </View>
-
-      <View style={styles.row}>
-        <Package size={14} color="#9ca3af" />
-        <Text style={styles.text}>{mission.items} items</Text>
-      </View>
-
-      <View style={styles.bottom}>
-        <Text
-          style={[
-            styles.status,
-            mission.status === "Completed"
-              ? { color: "#22c55e" }
-              : { color: "#f59e0b" },
-          ]}
-        >
-          {mission.status}
-        </Text>
-      </View>
-    </Pressable>
-  );
-}
-
 
 const styles = StyleSheet.create({
   container: {
