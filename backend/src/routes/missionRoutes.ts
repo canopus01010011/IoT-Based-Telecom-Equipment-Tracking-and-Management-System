@@ -12,6 +12,7 @@ const router = Router();
 
 router.use(authenticate);
 
+router.post('/from-json', MissionController.createMissionFromJson);
 router.post('/', validate(createMissionSchema), MissionController.createMission);
 router.get('/', MissionController.getAllMissions);
 router.get('/:id', MissionController.getMissionById);

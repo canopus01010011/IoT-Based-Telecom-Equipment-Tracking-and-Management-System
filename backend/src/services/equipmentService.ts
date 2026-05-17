@@ -1,12 +1,17 @@
 import { Equipment } from '../models/index.js';
 import { Op } from 'sequelize';
 
+const normalizeEquipmentPayload = (data: any) => ({
+  model: data.model || data.name,
+  type: data.type,
+  serial_number: data.serial_number,
+  equipment_status: data.equipment_status || data.status || 'available',
+  container_id: data.container_id,
+});
+
 export class EquipmentService {
   static async createEquipment(data: any) {
-    return await Equipment.create({
-    ...data,
-    quantity: data.quantity || 1,  // ✅ Ensure quantity is set
-  });
+    return Equipment.create(normalizeEquipmentPayload(data));
   }
 
   static async getAllEquipment(query: any) {
@@ -14,20 +19,23 @@ export class EquipmentService {
     const limit = parseInt(query.limit) || 10;
     const offset = (page - 1) * limit;
     const where: any = {};
-    if (query.status) where.status = query.status;
+
+    if (query.equipment_status || query.status) where.equipment_status = query.equipment_status || query.status;
     if (query.type) where.type = query.type;
     if (query.search) {
       where[Op.or] = [
-        { name: { [Op.iLike]: `%${query.search}%` } },
+        { model: { [Op.iLike]: `%${query.search}%` } },
         { serial_number: { [Op.iLike]: `%${query.search}%` } },
       ];
     }
+
     const { count, rows } = await Equipment.findAndCountAll({
       where,
       limit,
       offset,
-      order: [['created_at', 'DESC']],
+      order: [['id', 'ASC']],
     });
+
     return {
       equipment: rows,
       totalPages: Math.ceil(count / limit),
@@ -46,7 +54,7 @@ export class EquipmentService {
     if (userRole !== 'admin') throw new Error('Forbidden');
     const equipment = await Equipment.findByPk(id);
     if (!equipment) throw new Error('Equipment not found');
-    await equipment.update(data);
+    await equipment.update(normalizeEquipmentPayload({ ...equipment.toJSON(), ...data }));
     return equipment;
   }
 

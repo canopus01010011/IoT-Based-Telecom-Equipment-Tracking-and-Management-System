@@ -2,32 +2,33 @@ import { Model, DataTypes } from 'sequelize';
 import type { Optional } from 'sequelize';
 import sequelize from '../config/database.js';
 import bcrypt from 'bcrypt';
+import { generateCode } from '../utils/idGenerator.js';
 
 interface UserAttributes {
   id: string;
   email: string;
   password_hash: string;
+  first_name?: string;
+  second_name?: string;
   full_name: string;
   role: 'admin' | 'technician' | 'driver';
   phone: string;
-  avatar_url?: string;
-  is_active: boolean;
   fcm_token?: string;
   created_at?: Date;
   updated_at?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'updated_at' | 'avatar_url' | 'fcm_token'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'updated_at' | 'first_name' | 'second_name' | 'fcm_token'> {}
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: string;
   public email!: string;
   public password_hash!: string;
+  public first_name?: string;
+  public second_name?: string;
   public full_name!: string;
   public role!: 'admin' | 'technician' | 'driver';
   public phone!: string;
-  public avatar_url?: string;
-  public is_active!: boolean;
   public fcm_token?: string;
   public created_at!: Date;
   public updated_at!: Date;
@@ -39,8 +40,9 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
 
 User.init({
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.STRING,
+    defaultValue: () => generateCode('USR'),
+    field: 'user_id',
     primaryKey: true
   },
   email: {
@@ -53,7 +55,16 @@ User.init({
   },
   password_hash: {
     type: DataTypes.STRING,
+    field: 'password',
     allowNull: false
+  },
+  first_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  second_name: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   full_name: {
     type: DataTypes.STRING,
@@ -66,14 +77,8 @@ User.init({
   },
   phone: {
     type: DataTypes.STRING,
+    field: 'phone_num',
     allowNull: false
-  },
-  avatar_url: {
-    type: DataTypes.STRING
-  },
-  is_active: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
   },
   fcm_token: {
     type: DataTypes.STRING,
@@ -83,8 +88,8 @@ User.init({
   sequelize,
   tableName: 'users',
   timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
+  createdAt: 'joining_date',
+  updatedAt: false,
   hooks: {
     beforeCreate: async (user: User) => {
       if (user.password_hash) {

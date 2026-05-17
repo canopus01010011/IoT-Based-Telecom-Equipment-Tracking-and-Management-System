@@ -27,9 +27,7 @@ import numpy as np
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
-# ---------------------------------------------------------------------------
-# Import everything from the existing script — nothing is rewritten here
-# ---------------------------------------------------------------------------
+
 from images_ckeck import (
     EQUIPMENT_SCORE_THRESHOLD,
     analyze_quality,
@@ -43,9 +41,7 @@ ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/bmp"}
 MAX_FILE_SIZE_MB = 20
 
 
-# ---------------------------------------------------------------------------
-# Global model state — loaded ONCE at startup
-# ---------------------------------------------------------------------------
+
 
 _model = None
 _processor = None
@@ -55,7 +51,7 @@ _processor = None
 async def lifespan(app: FastAPI):
     global _model, _processor
     logger.info("Loading CLIP model ...")
-    _model, _processor = load_clip_model()   # reuses images_check.load_clip_model()
+    _model, _processor = load_clip_model()   
     logger.info("Model ready.")
     yield
     _model = None
@@ -74,9 +70,6 @@ app = FastAPI(
 )
 
 
-# ---------------------------------------------------------------------------
-# Response schema — mirrors AIValidationResponse in TypeScript
-# ---------------------------------------------------------------------------
 
 class Resolution(BaseModel):
     width: int
@@ -100,9 +93,6 @@ class ValidationResponse(BaseModel):
     clip: ClipResult
 
 
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
 
 @app.get("/health")
 async def health():
@@ -135,11 +125,51 @@ async def validate_photo(
 
     # -- reuse images_check functions directly --------------------------------
     quality = analyze_quality(image)           # -> QualityReport
+    if quality.blur_label == "Blurry":
+        issues = [
+        f"Image quality: {quality.blur_label} (score {quality.laplacian_var:.1f})"
+    ]
+
+        return ValidationResponse(
+            valid=False,
+            score=0.0,
+            issues=issues,
+            blur_score=round(quality.laplacian_var, 2),
+            brightness_score=round(quality.brightness, 2),
+            resolution=Resolution(width=w, height=h),
+            clip=ClipResult(
+                accepted=False,
+                equipment_score=0.0,
+                best_label="CLIP skipped",
+                best_score=0.0,
+            ),
+        )
+
+    if quality.brightness_label != "Good":
+        issues = [
+            f"Lighting: {quality.brightness_label} (brightness {quality.brightness:.1f})"
+        ]
+
+        return ValidationResponse(
+            valid=False,
+            score=0.0,
+            issues=issues,
+            blur_score=round(quality.laplacian_var, 2),
+            brightness_score=round(quality.brightness, 2),
+            resolution=Resolution(width=w, height=h),
+            clip=ClipResult(
+                accepted=False,
+                equipment_score=0.0,
+                best_label="CLIP skipped",
+                best_score=0.0,
+            ),
+        )
+
     detection = run_equipment_detection(       # -> DetectionResult
         image, _model, _processor
     )
 
-    # -- collect human-readable issues ---------------------------------------
+    # -- collect issues ---------------------------------------
     issues: list[str] = []
 
     if quality.blur_label != "Sharp":

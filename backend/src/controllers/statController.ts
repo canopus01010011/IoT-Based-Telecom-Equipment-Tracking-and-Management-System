@@ -53,16 +53,4 @@ export class StatController {
     }
   }
 
-  /**
-   * GET /api/stats/popular-equipment
-   */
-  static async getPopularEquipment(req: Request, res: Response, next: NextFunction) {
-    try {
-      const limit = parseInt(req.query.limit as string) || 5;
-      const data = await StatService.getPopularEquipment(limit);
-      res.json({ success: true, data });
-    } catch (error) {
-      next(error);
-    }
-  }
 }

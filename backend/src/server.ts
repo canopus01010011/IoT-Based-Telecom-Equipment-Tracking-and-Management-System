@@ -12,12 +12,6 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('✅ Database connection established');
 
-    // Sync database (development only)
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('✅ Database synchronized');
-    }
-
     // Create HTTP server
     const httpServer = createServer(app);
     
@@ -26,6 +20,10 @@ async function startServer() {
     
     // Start MQTT Bridge
     startMQTT();
+
+    // Sync database
+    await sequelize.sync({ alter: true });
+    console.log('✅ Database synchronized');
     
     // Start server
     httpServer.listen(PORT, () => {

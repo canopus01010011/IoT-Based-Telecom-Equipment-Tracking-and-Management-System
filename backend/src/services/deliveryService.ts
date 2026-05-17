@@ -1,233 +1,137 @@
-import { Delivery, Mission, Equipment, User } from '../models/index.js';
-import { Op } from 'sequelize';
+import { Confirmation, Mission, Report, User } from '../models/index.js';
 
 interface ScanData {
   missionId: string;
-  qrCode: string;
   userId: string;
   userRole: 'admin' | 'technician' | 'driver';
-  latitude?: number;
-  longitude?: number;
 }
 
 export class DeliveryService {
-  /**
-   * Process QR scan (driver or technician)
-   */
   static async processScan(data: ScanData) {
-    const { missionId, qrCode, userId, userRole, latitude, longitude } = data;
+    const { missionId, userId, userRole } = data;
 
-    // 1. Find mission by ID and validate QR code
-    const mission = await Mission.findOne({
-      where: {
-        id: missionId,
-        qr_code: qrCode,
-      },
+    const mission = await Mission.findByPk(missionId, {
       include: [
         { model: User, as: 'technician' },
         { model: User, as: 'driver' },
-        { model: Equipment },
       ],
     });
 
-    if (!mission) {
-      throw new Error('Invalid mission ID or QR code');
-    }
+    if (!mission) throw new Error('Mission not found');
+    if (mission.status === 'completed') throw new Error('Mission already completed');
 
-    // 2. Check mission status
-    if (mission.status === 'cancelled') {
-      throw new Error('Mission has been cancelled');
-    }
-
-    if (mission.status === 'delivered') {
-      throw new Error('Mission already completed');
-    }
-
-    // 3. Handle based on user role
     if (userRole === 'driver') {
-      return this.handleDriverScan(mission, userId, latitude, longitude);
-    } 
-    
-    if (userRole === 'technician') {
-      return this.handleTechnicianScan(mission, userId, latitude, longitude);
+      return this.handleDriverConfirmation(mission, userId);
     }
 
-    throw new Error('Only drivers and technicians can scan QR codes');
+    if (userRole === 'technician') {
+      return this.handleTechnicianConfirmation(mission, userId);
+    }
+
+    throw new Error('Only drivers and technicians can confirm missions');
   }
 
-  /**
-   * Handle driver scan (first scan)
-   */
-  private static async handleDriverScan(
-    mission: Mission,
-    driverId: string,
-    latitude?: number,
-    longitude?: number
-  ) {
-    // Verify driver is assigned to this mission
+  private static async handleDriverConfirmation(mission: Mission, driverId: string) {
     if (mission.driver_id !== driverId) {
       throw new Error('You are not assigned as driver for this mission');
     }
 
-    // Check if driver already scanned
-    if (mission.driver_scanned_at) {
-      throw new Error('Driver already scanned this mission');
-    }
-
-    // Update mission with driver scan
-    await mission.update({
-      status: 'driver_scanned',
-      driver_scanned_at: new Date(),
-    });
-
-    // Create or update delivery record
-    const [delivery, created] = await Delivery.findOrCreate({
+    const [confirmation, created] = await Confirmation.findOrCreate({
       where: { mission_id: mission.id },
       defaults: {
         mission_id: mission.id,
-        driver_id: mission.driver_id,
-        technician_id: mission.technician_id,
-        qr_code_scanned: mission.qr_code,
-        driver_scanned_at: new Date(),
-        driver_scan_lat: latitude ?? null,
-        driver_scan_lng: longitude ?? null,
-        delivered_at: new Date(), // Temporary, will update on technician scan
-      } as any,
+        driver_confirm_time: new Date(),
+        confirmation_status: 'driver_confirmed',
+      },
     });
 
-    if (!created) {
-      await delivery.update({
-        driver_scanned_at: new Date(),
-        driver_scan_lat: latitude ?? null,
-        driver_scan_lng: longitude ?? null,
-      }as any );
+    if (!created && confirmation.driver_confirm_time) {
+      throw new Error('Driver already confirmed this mission');
     }
+
+    await confirmation.update({
+      driver_confirm_time: new Date(),
+      confirmation_status: 'driver_confirmed',
+    });
+    await mission.update({ status: 'in-progress', start_date: new Date() });
 
     return {
       success: true,
-      message: 'Driver scan recorded. Waiting for technician scan.',
+      message: 'Driver confirmation recorded. Waiting for technician confirmation.',
       status: mission.status,
-      nextStep: 'technician_scan_required',
+      nextStep: 'technician_confirmation_required',
     };
   }
 
-  /**
-   * Handle technician scan (second scan - final confirmation)
-   */
-  private static async handleTechnicianScan(
-    mission: Mission,
-    technicianId: string,
-    latitude?: number,
-    longitude?: number
-  ) {
-    // Verify technician is assigned to this mission
+  private static async handleTechnicianConfirmation(mission: Mission, technicianId: string) {
     if (mission.technician_id !== technicianId) {
       throw new Error('You are not assigned as technician for this mission');
     }
 
-    // Check if driver already scanned
-    if (!mission.driver_scanned_at) {
-      throw new Error('Driver must scan QR code before technician');
+    const confirmation = await Confirmation.findOne({ where: { mission_id: mission.id } });
+    if (!confirmation?.driver_confirm_time) {
+      throw new Error('Driver must confirm before technician');
+    }
+    if (confirmation.technician_confirm_time) {
+      throw new Error('Technician already confirmed this mission');
     }
 
-    // Check if technician already scanned
-    if (mission.technician_scanned_at) {
-      throw new Error('Technician already scanned this mission');
-    }
-
-    // Update mission with technician scan and mark as delivered
-    await mission.update({
-      status: 'delivered',
-      technician_scanned_at: new Date(),
-      delivered_at: new Date(),
+    await confirmation.update({
+      technician_confirm_time: new Date(),
+      confirmation_status: 'confirmed',
     });
+    await mission.update({ status: 'completed', end_date: new Date() });
 
-    // Update delivery record
-    const delivery = await Delivery.findOne({
+    await Report.findOrCreate({
       where: { mission_id: mission.id },
-    });
-
-    if (delivery) {
-      await delivery.update({
-        technician_scanned_at: new Date(),
-        technician_scan_lat: latitude ?? null,
-        technician_scan_lng: longitude ?? null,
-        delivered_at: new Date(),
-      } as any );
-    } else {
-      // Fallback: create delivery record if doesn't exist
-      await Delivery.create({
+      defaults: {
         mission_id: mission.id,
-        driver_id: mission.driver_id,
-        technician_id: mission.technician_id,
-        qr_code_scanned: mission.qr_code,
-        driver_scanned_at: mission.driver_scanned_at || new Date(),
-        technician_scanned_at: new Date(),
-        delivered_at: new Date(),
-        technician_scan_lat: latitude ?? null,
-        technician_scan_lng: longitude ?? null,
-      } as any );
-    }
-
-    // Update equipment status back to available
-    await Equipment.update(
-      { status: 'available' },
-      { where: { id: mission.equipment_id } }
-    );
+        report_date: new Date(),
+        description: 'Mission completed',
+        delivery_photo_url: [],
+      },
+    });
 
     return {
       success: true,
-      message: 'Delivery confirmed successfully!',
+      message: 'Mission confirmed successfully.',
       status: mission.status,
-      deliveredAt: mission.delivered_at,
+      completedAt: mission.end_date,
     };
   }
 
-  /**
-   * Get delivery status for a mission
-   */
   static async getDeliveryStatus(missionId: string, userId: string, userRole: string) {
     const mission = await Mission.findByPk(missionId, {
       include: [
         { model: User, as: 'technician', attributes: ['id', 'full_name'] },
         { model: User, as: 'driver', attributes: ['id', 'full_name'] },
-        { model: Equipment, attributes: ['id', 'name'] },
       ],
     });
 
-    if (!mission) {
-      throw new Error('Mission not found');
-    }
-
-    // Check authorization
+    if (!mission) throw new Error('Mission not found');
     if (userRole !== 'admin' && mission.technician_id !== userId && mission.driver_id !== userId) {
       throw new Error('You are not authorized to view this delivery status');
     }
 
-    const delivery = await Delivery.findOne({
-      where: { mission_id: missionId },
-    });
+    const confirmation = await Confirmation.findOne({ where: { mission_id: missionId } });
+    const report = await Report.findOne({ where: { mission_id: missionId } });
 
     return {
       missionId: mission.id,
-      title: mission.title,
       status: mission.status,
-      qrCode: mission.qr_code,
-      scans: {
+      confirmation: {
         driver: {
-          scanned: !!mission.driver_scanned_at,
-          timestamp: mission.driver_scanned_at,
-          latitude: delivery?.driver_scan_lat,
-          longitude: delivery?.driver_scan_lng,
+          confirmed: !!confirmation?.driver_confirm_time,
+          timestamp: confirmation?.driver_confirm_time,
         },
         technician: {
-          scanned: !!mission.technician_scanned_at,
-          timestamp: mission.technician_scanned_at,
-          latitude: delivery?.technician_scan_lat,
-          longitude: delivery?.technician_scan_lng,
+          confirmed: !!confirmation?.technician_confirm_time,
+          timestamp: confirmation?.technician_confirm_time,
         },
+        status: confirmation?.confirmation_status || 'pending',
       },
-      deliveredAt: mission.delivered_at,
+      completedAt: mission.end_date,
+      report,
     };
   }
 }

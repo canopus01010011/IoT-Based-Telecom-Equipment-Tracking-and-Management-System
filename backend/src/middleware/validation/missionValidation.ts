@@ -1,33 +1,43 @@
 import Joi from 'joi';
 
+const codedId = Joi.string().pattern(/^[A-Z]{3,4}-[A-Z2-9]{6}$/);
+
 export const createMissionSchema = Joi.object({
-  title: Joi.string().required(),
-  description: Joi.string().required(),
-  started_at: Joi.date().required(),
-  technician_id: Joi.string().uuid().required(),
-  driver_id: Joi.string().uuid().required(),
-  equipment_id: Joi.string().uuid().required(),
-  quantity: Joi.number().integer().min(1).default(1),  // ✅ ADD THIS
-  site_id: Joi.string().uuid().required(),
-  priority: Joi.string().valid('low', 'medium', 'high', 'urgent').default('medium'),
-  qr_code: Joi.string().uuid().required(),
+  scheduled_start_date: Joi.date().required(),
+  scheduled_end_date: Joi.date().required(),
+  start_date: Joi.date().optional(),
+  end_date: Joi.date().optional(),
+  technician_id: codedId.required(),
+  driver_id: codedId.required(),
+  equipment_list: Joi.array().items(
+    Joi.object({
+      equipment_id: codedId.required(),
+      quantity: Joi.number().min(1).required()
+    })
+  ).required(),
+  container_id: codedId.optional(),
+  site_id: codedId.required(),
 });
 
 export const updateMissionSchema = Joi.object({
-  title: Joi.string().optional(),
-  description: Joi.string().optional(),
-  started_at: Joi.date().optional(),
-  technician_id: Joi.string().uuid().optional(),
-  driver_id: Joi.string().uuid().optional(),
-  equipment_id: Joi.string().uuid().optional(),
-  quantity: Joi.number().integer().min(1).optional(),  // ✅ ADD THIS
-  site_id: Joi.string().uuid().optional(),
-  priority: Joi.string().valid('low', 'medium', 'high', 'urgent').optional(),
-  qr_code: Joi.string().uuid().required(),
+  scheduled_start_date: Joi.date().optional(),
+  scheduled_end_date: Joi.date().optional(),
+  start_date: Joi.date().optional(),
+  end_date: Joi.date().optional(),
+  technician_id: codedId.optional(),
+  driver_id: codedId.optional(),
+  equipment_list: Joi.array().items(
+    Joi.object({
+      equipment_id: codedId.required(),
+      quantity: Joi.number().min(1).required()
+    })
+  ).optional(),
+  container_id: codedId.optional(),
+  site_id: codedId.optional(),
 });
 
 export const updateStatusSchema = Joi.object({
   status: Joi.string()
-    .valid('in_transit', 'driver_scanned', 'delivered', 'cancelled')
+    .valid('in-progress', 'completed')
     .required(),
 });
