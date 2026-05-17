@@ -9,9 +9,7 @@ from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
 
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
+
 
 DEFAULT_IMAGE_PATH = r"C:\Users\Informatics\Pictures\Camera Roll\IMG_20251202_233351.jpg"
 
@@ -34,11 +32,8 @@ EQUIPMENT_LABELS = [
 NON_EQUIPMENT_LABEL = "a photo of something unrelated to networking"
 
 
-# ---------------------------------------------------------------------------
-# Data classes
-# ---------------------------------------------------------------------------
 
-@dataclass
+
 @dataclass
 class QualityReport:
     laplacian_var: float
@@ -95,9 +90,9 @@ class DetectionResult:
         }
 
 
-# ---------------------------------------------------------------------------
+
 # Image loading
-# ---------------------------------------------------------------------------
+
 
 def load_image(image_path: str):
     """Load an image from disk. Raises FileNotFoundError if not found."""
@@ -107,9 +102,9 @@ def load_image(image_path: str):
     return image
 
 
-# ---------------------------------------------------------------------------
+
 # Quality analysis
-# ---------------------------------------------------------------------------
+
 
 def analyze_quality(image) -> QualityReport:
     """Compute blur and brightness metrics on an image."""
@@ -121,9 +116,9 @@ def analyze_quality(image) -> QualityReport:
     )
 
 
-# ---------------------------------------------------------------------------
+
 # CLIP model
-# ---------------------------------------------------------------------------
+
 
 def load_clip_model():
     """Load and return the CLIP model and processor (eval mode)."""
@@ -165,9 +160,9 @@ def run_equipment_detection(image, model, processor) -> DetectionResult:
     )
 
 
-# ---------------------------------------------------------------------------
+
 # CLI
-# ---------------------------------------------------------------------------
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -182,9 +177,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-# ---------------------------------------------------------------------------
+
 # Main
-# ---------------------------------------------------------------------------
+
 
 def main() -> None:
     args = parse_args()
@@ -200,6 +195,14 @@ def main() -> None:
     print("\n--- Image Quality ---")
     quality = analyze_quality(image)
     quality.print_summary()
+    
+    if quality.blur_label == "Blurry":
+        print("\nImage rejected: too blurry.")
+        sys.exit(0)
+
+    if quality.brightness_label in ["Too Dark", "Too Bright"]:
+        print("\nImage rejected: bad brightness.")
+        sys.exit(0)
 
     # 3. Run CLIP detection
     print("\n--- Equipment Detection ---")

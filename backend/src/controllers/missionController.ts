@@ -8,8 +8,21 @@ export class MissionController {
         return res.status(403).json({ error: 'Forbidden' });
       }
       
-      const mission = await MissionService.createMission(req.body, req.user.id);
+      const mission = await MissionService.createMission(req.body);
       res.status(201).json(mission);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async createMissionFromJson(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const result = await MissionService.createMissionFromJson(req.body, req.user.id);
+      res.status(201).json(result);
     } catch (error) {
       next(error);
     }

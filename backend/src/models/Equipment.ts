@@ -1,58 +1,38 @@
 import { Model, DataTypes } from 'sequelize';
 import type { Optional } from 'sequelize';
 import sequelize from '../config/database.js';
+import { generateCode } from '../utils/idGenerator.js';
 
 interface EquipmentAttributes {
   id: string;
-  name: string;
   type: string;
   serial_number: string;
-  status: 'available' | 'in_use' | 'maintenance' | 'lost';
-  quantity: number;  // ✅ ADD THIS - total available units
-  device_id?: string;
-  current_latitude?: number;
-  current_longitude?: number;
-  last_gps_update?: Date;
-  site_id?: string;
-  avatar_url?: string;  // 
-  created_at?: Date;
-  updated_at?: Date;
+  model: string;
+  equipment_status: 'available' | 'in_use' | 'maintenance' | 'lost';
+  container_id?: string;
 }
 
-type EquipmentCreationAttributes = Optional<EquipmentAttributes, 
-  'id' | 'created_at' | 'updated_at' | 'device_id' | 'current_latitude' | 
-  'current_longitude' | 'last_gps_update' | 'site_id' | 'avatar_url'  // ✅ ADD avatar_url
->;
+type EquipmentCreationAttributes = Optional<EquipmentAttributes, 'id' | 'equipment_status' | 'container_id'>;
 
 class Equipment extends Model<EquipmentAttributes, EquipmentCreationAttributes> implements EquipmentAttributes {
   public id!: string;
-  public name!: string;
   public type!: string;
   public serial_number!: string;
-  public status!: 'available' | 'in_use' | 'maintenance' | 'lost';
-  public quantity!: number;  // ✅ ADD THIS
-  public device_id?: string;
-  public current_latitude?: number;
-  public current_longitude?: number;
-  public last_gps_update?: Date;
-  public site_id?: string;
-  public avatar_url?: string;  //
-  public created_at!: Date;
-  public updated_at!: Date;
+  public model!: string;
+  public equipment_status!: 'available' | 'in_use' | 'maintenance' | 'lost';
+  public container_id?: string;
 }
 
 Equipment.init({
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
-  name: {
     type: DataTypes.STRING,
-    allowNull: false
+    defaultValue: () => generateCode('EQP'),
+    field: 'equipment_id',
+    primaryKey: true
   },
   type: {
     type: DataTypes.STRING,
+    field: 'equipment_type',
     allowNull: false
   },
   serial_number: {
@@ -60,46 +40,27 @@ Equipment.init({
     allowNull: false,
     unique: true
   },
-  status: {
+  model: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  equipment_status: {
     type: DataTypes.ENUM('available', 'in_use', 'maintenance', 'lost'),
     allowNull: false,
     defaultValue: 'available'
   },
-  quantity: {  // ✅ ADD THIS
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 1
-  },
-  device_id: {
+  container_id: {
     type: DataTypes.STRING,
-    unique: true
-  },
-  current_latitude: {
-    type: DataTypes.DECIMAL(10, 8)
-  },
-  current_longitude: {
-    type: DataTypes.DECIMAL(11, 8)
-  },
-  last_gps_update: {
-    type: DataTypes.DATE
-  },
-  site_id: {
-    type: DataTypes.UUID,
+    allowNull: true,
     references: {
-      model: 'sites',
-      key: 'id'
+      model: 'containers',
+      key: 'container_id'
     }
-  },
-  avatar_url: {  //  stores Cloudinary URL
-    type: DataTypes.STRING,
-    allowNull: true
   }
 }, {
   sequelize,
   tableName: 'equipment',
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  timestamps: false
 });
 
 export default Equipment;

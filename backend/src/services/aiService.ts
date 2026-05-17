@@ -8,6 +8,12 @@ interface AIValidationResponse {
   blur_score?: number;
   brightness_score?: number;
   resolution?: { width: number; height: number };
+  clip?: {
+   accepted: boolean;
+   equipment_score: number;
+   best_label: string;
+   best_score: number;
+  };
 }
 
 export class AIService {
@@ -35,6 +41,7 @@ export class AIService {
         blur_score: response.data.blur_score,
         brightness_score: response.data.brightness_score,
         resolution: response.data.resolution,
+	clip: response.data.clip,
       };
     } catch (error) {
       console.error('❌ AI Service error:', error);

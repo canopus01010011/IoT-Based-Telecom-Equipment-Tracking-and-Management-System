@@ -29,6 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 // ============ ROUTES ============
+app.post('/test-auth', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/missions', missionRoutes);

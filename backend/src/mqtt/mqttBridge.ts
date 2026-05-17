@@ -59,13 +59,12 @@ export const startMQTT = () => {
         lng: lng,
         speed: payload.speed,
         heading: payload.heading,
-        accuracy: payload.accuracy,
         timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),////undefinedmodified
       });
 
       // Emit real-time update via Socket.IO
-      if (result && result.equipmentId) {
-        emitGPSUpdate(result.equipmentId, result.equipmentName, result.lat, result.lng);
+      if (result && result.gpsId) {
+        emitGPSUpdate(result.gpsId, deviceId, result.lat, result.lng);
       }
       
     } catch (error) {
