@@ -8,23 +8,16 @@ export class DeliveryController {
    */
   static async scanQR(req: Request, res: Response, next: NextFunction) {
     try {
-      const { missionId, qrCode, latitude, longitude } = req.body;
+      const { missionId } = req.body;
 
       // Validation
       if (!missionId) {
         return res.status(400).json({ error: 'missionId is required' });
       }
-      if (!qrCode) {
-        return res.status(400).json({ error: 'qrCode is required' });
-      }
-
       const result = await DeliveryService.processScan({
         missionId,
-        qrCode,
         userId: req.user?.id as string ,
         userRole: req.user?.role as any,
-        latitude,
-        longitude,
       });
 
       res.json(result);
@@ -33,10 +26,10 @@ export class DeliveryController {
         if (error.message.includes('not assigned')) {
           return res.status(403).json({ error: error.message });
         }
-        if (error.message.includes('already scanned')) {
+        if (error.message.includes('already confirmed')) {
           return res.status(409).json({ error: error.message });
         }
-        if (error.message.includes('must scan')) {
+        if (error.message.includes('must confirm')) {
           return res.status(400).json({ error: error.message });
         }
         if (error.message.includes('Invalid')) {

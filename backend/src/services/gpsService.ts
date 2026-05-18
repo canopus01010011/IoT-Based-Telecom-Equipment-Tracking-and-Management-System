@@ -1,80 +1,66 @@
-import { GPSLog, Equipment } from '../models/index.js';
-import { Op } from 'sequelize';
+import { GPSDevice, TrackingData } from '../models/index.js';
 
 interface GPSData {
   device_id: string;
   lat: number;
   lng: number;
-  speed?: number;
   heading?: number;
-  accuracy?: number;
+  speed?: number;
   timestamp?: Date;
 }
 
 export class GPSService {
   static async saveGPSData(data: GPSData) {
     try {
-      // 1. Find equipment by device_id
-      const equipment = await Equipment.findOne({
-        where: { device_id: data.device_id }
+      const gpsDevice = await GPSDevice.findOne({
+        where: { device_serial_number: data.device_id },
       });
 
-      if (!equipment) {
-        console.error(`❌ Equipment not found for device_id: ${data.device_id}`);
-        console.log(`💡 Create equipment with device_id: ${data.device_id}`);
+      if (!gpsDevice) {
+        console.error(`GPS device not found for serial number: ${data.device_id}`);
         return null;
       }
 
-      // 2. Save to GPS logs table
-      const gpsLog = await GPSLog.create({
-        equipment_id: equipment.id,
+      const timestamp = data.timestamp || new Date();
+
+      await TrackingData.create({
+        gps_id: gpsDevice.id,
         latitude: data.lat,
         longitude: data.lng,
-        speed: data.speed || 0,
-        heading: data.heading || 0,
-        accuracy: data.accuracy || 0,
-        timestamp: data.timestamp || new Date(),
+        timestamp,
       });
 
-      // 3. Update equipment's current location
-      await equipment.update({
-        current_latitude: data.lat,
-        current_longitude: data.lng,
-        last_gps_update: new Date(),
-      });
-
-      console.log(`✅ GPS saved: ${equipment.name} at [${data.lat}, ${data.lng}]`);
-      
       return {
         success: true,
-        equipmentId: equipment.id,
-        equipmentName: equipment.name,
+        gpsId: gpsDevice.id,
         lat: data.lat,
         lng: data.lng,
       };
     } catch (error) {
-      console.error('❌ Error saving GPS data:', error);
+      console.error('Error saving GPS data:', error);
       return null;
     }
   }
 
-  static async getEquipmentHistory(equipmentId: string, limit: number = 100) {
-    const logs = await GPSLog.findAll({
-      where: { equipment_id: equipmentId },
+  static async getEquipmentHistory(gpsId: string, limit: number = 100) {
+    return TrackingData.findAll({
+      where: { gps_id: gpsId },
       order: [['timestamp', 'DESC']],
-      limit: limit,
+      limit,
     });
-    return logs;
   }
 
   static async getAllLiveLocations() {
-    const equipment = await Equipment.findAll({
-      where: {
-        current_latitude: { [Op.ne]: null } as any,
-        current_longitude: { [Op.ne]: null } as any,
-      },
-      attributes: ['id', 'name', 'device_id', 'current_latitude', 'current_longitude', 'last_gps_update', 'status'],
+    return GPSDevice.findAll({
+      attributes: ['id', 'container_id', 'device_serial_number', 'battery_level', 'device_status'],
+      include: [
+        {
+          model: TrackingData,
+          separate: true,
+          limit: 1,
+          order: [['timestamp', 'DESC']],
+        },
+      ],
     });
-    return equipment;
   }
 }

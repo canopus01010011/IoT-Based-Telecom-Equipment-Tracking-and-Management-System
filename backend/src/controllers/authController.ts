@@ -37,7 +37,6 @@ export const register = async (req: Request, res: Response) => {
       full_name,
       role: role || 'technician',
       phone,
-      is_active: true,
     });
 
     // 5. Generate tokens
@@ -52,7 +51,6 @@ export const register = async (req: Request, res: Response) => {
       full_name: user.full_name,
       role: user.role,
       phone: user.phone,
-      is_active: user.is_active,
       created_at: user.created_at,
     };
 
@@ -90,12 +88,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // 3. Check if active
-    if (!user.is_active) {
-      return res.status(401).json({ error: 'Account is disabled' });
-    }
-
-    // 4. Verify password using model's comparePassword method
+    // 3. Verify password using model's comparePassword method
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -113,7 +106,6 @@ export const login = async (req: Request, res: Response) => {
       full_name: user.full_name,
       role: user.role,
       phone: user.phone,
-      is_active: user.is_active,
     };
 
     return res.status(200).json({
@@ -146,10 +138,10 @@ export const refreshToken = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid or expired refresh token' });
     }
 
-    // Find user to make sure they still exist and are active
+    // Find user to make sure they still exists
     const user = await User.findByPk(decoded.id);
-    if (!user || !user.is_active) {
-      return res.status(401).json({ error: 'User not found or inactive' });
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
     }
 
     // Generate new tokens
@@ -198,8 +190,6 @@ export const getMe = async (req: Request, res: Response) => {
       full_name: user.full_name,
       role: user.role,
       phone: user.phone,
-      avatar_url: user.avatar_url,
-      is_active: user.is_active,
       created_at: user.created_at,
     };
     

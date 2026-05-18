@@ -17,6 +17,5 @@ router.get('/stats/dashboard', StatController.getDashboardStats);
 router.get('/stats/missions-per-day', StatController.getMissionsPerDay);
 router.get('/stats/top-technicians', StatController.getTopTechnicians);
 router.get('/stats/top-drivers', StatController.getTopDrivers);
-router.get('/stats/popular-equipment', StatController.getPopularEquipment);
 
 export default router;
