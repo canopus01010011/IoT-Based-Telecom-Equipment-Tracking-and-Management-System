@@ -23,12 +23,13 @@ export class GPSService {
 
       const timestamp = data.timestamp || new Date();
 
-      await TrackingData.create({
-        gps_id: gpsDevice.id,
-        latitude: data.lat,
-        longitude: data.lng,
-        timestamp,
-      });
+      // Commented out to prevent database bloat since the system uses real-time WebSockets
+      // await TrackingData.create({
+      //   gps_id: gpsDevice.id,
+      //   latitude: data.lat,
+      //   longitude: data.lng,
+      //   timestamp,
+      // });
 
       return {
         success: true,
