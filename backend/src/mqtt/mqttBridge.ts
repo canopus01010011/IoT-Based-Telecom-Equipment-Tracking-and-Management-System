@@ -19,12 +19,12 @@ export const startMQTT = () => {
   client.on('connect', () => {
     console.log('✅ MQTT Connected to broker');
     
-    // Subscribe to all GPS topics (format: gps/DEVICE_ID)
-    client?.subscribe('gps/+', { qos: 1 }, (err) => {
+    // Subscribe to all GPS topics (format: ericsson/sites/+/+/gps)
+    client?.subscribe('ericsson/sites/+/+/gps', { qos: 1 }, (err) => {
       if (err) {
-        console.error('❌ Failed to subscribe to gps/+:', err);
+        console.error('❌ Failed to subscribe to ericsson/sites/+/+/gps:', err);
       } else {
-        console.log('✅ Subscribed to topic: gps/+');
+        console.log('✅ Subscribed to topic: ericsson/sites/+/+/gps');
       }
     });
   });
@@ -33,8 +33,9 @@ export const startMQTT = () => {
     try {
       const payload = JSON.parse(message.toString());
       
-      // Extract device_id from topic (gps/ESP32-001 -> ESP32-001)
-      const deviceId = topic.split('/')[1];
+      // Extract device_id from topic (ericsson/sites/site_alger/package_001/gps -> package_001)
+      const parts = topic.split('/');
+      const deviceId = parts[3];
       
       if (!deviceId) {
         console.error('❌ Invalid topic format:', topic);
@@ -59,7 +60,7 @@ export const startMQTT = () => {
         lng: lng,
         speed: payload.speed,
         heading: payload.heading,
-        timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),////undefinedmodified
+        timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),
       });
 
       // Emit real-time update via Socket.IO
