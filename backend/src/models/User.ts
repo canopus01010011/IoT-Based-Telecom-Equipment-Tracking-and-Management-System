@@ -15,10 +15,9 @@ interface UserAttributes {
   phone: string;
   fcm_token?: string;
   created_at?: Date;
-  updated_at?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'updated_at' | 'first_name' | 'second_name' | 'fcm_token'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'first_name' | 'second_name' | 'fcm_token'> {}
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: string;
@@ -31,7 +30,6 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public phone!: string;
   public fcm_token?: string;
   public created_at!: Date;
-  public updated_at!: Date;
 
   public async comparePassword(candidatePassword: string): Promise<boolean> {
     return bcrypt.compare(candidatePassword, this.password_hash);
@@ -88,7 +86,7 @@ User.init({
   sequelize,
   tableName: 'users',
   timestamps: true,
-  createdAt: 'joining_date',
+  createdAt: 'created_at',
   updatedAt: false,
   hooks: {
     beforeCreate: async (user: User) => {
