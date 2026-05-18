@@ -1,4 +1,5 @@
 import { GPSDevice, TrackingData } from '../models/index.js';
+import { Op } from 'sequelize';
 
 interface GPSData {
   device_id: string;
@@ -23,13 +24,23 @@ export class GPSService {
 
       const timestamp = data.timestamp || new Date();
 
-      // Commented out to prevent database bloat since the system uses real-time WebSockets
-      // await TrackingData.create({
-      //   gps_id: gpsDevice.id,
-      //   latitude: data.lat,
-      //   longitude: data.lng,
-      //   timestamp,
-      // });
+      // Save the new tracking point
+      await TrackingData.create({
+        gps_id: gpsDevice.id,
+        latitude: data.lat,
+        longitude: data.lng,
+        timestamp,
+      });
+
+      // Automatically prune data older than 1 minute to prevent database bloat
+      await TrackingData.destroy({
+        where: {
+          gps_id: gpsDevice.id,
+          timestamp: {
+            [Op.lt]: new Date(Date.now() - 60 * 1000)
+          }
+        }
+      });
 
       return {
         success: true,
