@@ -1,5 +1,6 @@
 import paho.mqtt.client as mqtt
 import ssl
+import os
 import gpxpy
 import gpxpy.gpx
 import math
@@ -36,7 +37,8 @@ def payload_create(lat, lon, heading, battery):
 def run_device(client, device):
     points = []
     topic = TOPIC_GPS.format(siteID=device['siteID'], deviceID=device['deviceID'])
-    with open(device['gpx_file'], 'r') as f:
+    gpx_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), device['gpx_file'])
+    with open(gpx_path, 'r') as f:
         gpx = gpxpy.parse(f)
     for track in gpx.tracks:
         for segment in track.segments:
