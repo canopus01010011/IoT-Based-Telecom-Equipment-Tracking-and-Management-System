@@ -71,6 +71,18 @@ if __name__ == "__main__":
     client.loop_start()
     print("Connected to the broker MQTT")
 
+    threads = []
     for device in DEVICES:
         t = threading.Thread(target=run_device, args=(client, device))
+        t.daemon = True
         t.start()
+        threads.append(t)
+
+    try:
+        while True:
+            sleep(1)
+    except KeyboardInterrupt:
+        print("\nStopping simulator...")
+        client.loop_stop()
+        client.disconnect()
+        print("Disconnected. Exiting.")
