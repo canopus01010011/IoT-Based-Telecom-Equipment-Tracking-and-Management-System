@@ -30,7 +30,7 @@ export class UserService {
       attributes: { exclude: ['password_hash'] },
       limit,
       offset,
-      order: [['joining_date', 'DESC']],
+      order: [['created_at', 'DESC']],
     });
     return {
       users: rows,
