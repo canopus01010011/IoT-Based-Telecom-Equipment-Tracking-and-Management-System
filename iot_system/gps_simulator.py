@@ -77,8 +77,8 @@ def run_device(client, device):
 if __name__ == "__main__":
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     
-    # Enable TLS/SSL only if using port 8883 (standard secure MQTT port) or if HiveMQ broker is targeted
-    if BROKER_PORT == 8883 or (BROKER_HOST and "hivemq" in BROKER_HOST):
+    # Enable TLS/SSL only on the standard secure MQTT port.
+    if BROKER_PORT == 8883:
         client.tls_set(tls_version=ssl.PROTOCOL_TLS)
         
     if MQTT_USERNAME and MQTT_PASSWORD:
