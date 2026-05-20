@@ -1,127 +1,102 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import Sidebar from '../components/Sidebar'
-import TopBar  from '../components/TopBar'
+import PageLayout  from '../components/PageLayout'
+import StatCard    from '../components/StatCard'
+import StatusBadge from '../components/StatusBadge'
+import { useT }    from '../context/LanguageContext'
 
 const avatarColors = ['#1d4ed8','#0f6e56','#712b13','#534ab7','#854f0b','#0c447c']
 
 const MOCK = [
-  { id:1, nom:'Karim Benali',   telephone:'+213 550 12 34', vehicule:'Camionnette 16-DZ-142', missions:24, statut:'Disponible' },
-  { id:2, nom:'Ali Hamid',      telephone:'+213 661 98 76', vehicule:'Fourgon 09-DZ-871',     missions:18, statut:'En mission' },
-  { id:3, nom:'Mohamed Saadi',  telephone:'+213 770 45 67', vehicule:'Pick-up 23-DZ-305',     missions:31, statut:'En mission' },
-  { id:4, nom:'Omar Meziane',   telephone:'+213 699 23 45', vehicule:'Camionnette 07-DZ-490', missions:12, statut:'Disponible' },
-  { id:5, nom:'Yacine Brahim',  telephone:'+213 555 67 89', vehicule:'Fourgon 14-DZ-228',     missions:9,  statut:'Indisponible'},
+  { id:1, nom:'Karim Benali',  telephone:'+213 550 12 34', vehicule:'Van — 16-DZ-142',     missions:24, statut:'Available'   },
+  { id:2, nom:'Ali Hamid',     telephone:'+213 661 98 76', vehicule:'Truck — 09-DZ-871',   missions:18, statut:'On Mission'  },
+  { id:3, nom:'Mohamed Saadi', telephone:'+213 770 45 67', vehicule:'Pick-up — 23-DZ-305', missions:31, statut:'On Mission'  },
+  { id:4, nom:'Omar Meziane',  telephone:'+213 699 23 45', vehicule:'Van — 07-DZ-490',     missions:12, statut:'Available'   },
+  { id:5, nom:'Yacine Brahim', telephone:'+213 555 67 89', vehicule:'Truck — 14-DZ-228',   missions:9,  statut:'Unavailable' },
 ]
 
-const statusStyle = {
-  'Disponible':   { background:'rgba(34,197,94,.1)',  color:'#4ade80' },
-  'En mission':   { background:'rgba(59,130,246,.12)',color:'#60a5fa' },
-  'Indisponible': { background:'rgba(148,163,184,.1)',color:'#94a3b8' },
+const icons = {
+  total:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
+  avail:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+  mission: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>,
 }
 
 export default function Drivers() {
+  const t = useT()
   const [drivers, setDrivers] = useState([])
   const [search, setSearch]   = useState('')
 
   useEffect(() => {
-    axios.get('/api/drivers', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-      .then(r => setDrivers(r.data))
-      .catch(() => setDrivers(MOCK))
+    axios.get('/api/drivers', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => setDrivers(r.data)).catch(() => setDrivers(MOCK))
   }, [])
 
   const displayed = drivers.filter(d =>
-    d.nom.toLowerCase().includes(search.toLowerCase()) ||
-    d.vehicule.toLowerCase().includes(search.toLowerCase())
+    d.nom?.toLowerCase().includes(search.toLowerCase()) ||
+    d.vehicule?.toLowerCase().includes(search.toLowerCase())
   )
 
   const stats = {
     total:  drivers.length,
-    dispo:  drivers.filter(d => d.statut === 'Disponible').length,
-    actifs: drivers.filter(d => d.statut === 'En mission').length,
+    dispo:  drivers.filter(d => d.statut === 'Available').length,
+    actifs: drivers.filter(d => d.statut === 'On Mission').length,
   }
 
   return (
-    <div className="flex min-h-screen" style={{ background:'#0a0f1e' }}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <TopBar title="Drivers" />
-        <main className="flex-1 p-6">
-
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            {[
-              { label:'Total drivers',   value: stats.total,  color:'#e2e8f0' },
-              { label:'Disponibles',     value: stats.dispo,  color:'#4ade80' },
-              { label:'En mission',      value: stats.actifs, color:'#60a5fa' },
-            ].map(s => (
-              <div key={s.label} className="rounded-xl p-4"
-                style={{ background:'#111827', border:'0.5px solid rgba(59,130,246,.15)' }}>
-                <p className="text-xl font-medium" style={{ color: s.color }}>{s.value}</p>
-                <p className="text-xs mt-1" style={{ color:'rgba(148,163,184,.5)' }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Recherche */}
-          <div className="mb-4">
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher un driver ou véhicule…"
-              style={{
-                background:'#0d1426', border:'0.5px solid rgba(59,130,246,.2)',
-                borderRadius:7, padding:'8px 14px', fontSize:13,
-                color:'#e2e8f0', outline:'none', width:280,
-              }}
-            />
-          </div>
-
-          {/* Grille drivers */}
-          <div className="grid grid-cols-2 gap-4">
-            {displayed.map((d, i) => (
-              <div key={d.id} className="rounded-xl p-5"
-                style={{ background:'#111827', border:'0.5px solid rgba(59,130,246,.15)' }}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div style={{
-                    width:44, height:44, borderRadius:'50%',
-                    background: avatarColors[i % avatarColors.length],
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    fontSize:14, fontWeight:500, color:'#e2e8f0', flexShrink:0
-                  }}>
-                    {d.nom.split(' ').map(n => n[0]).join('').slice(0,2)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium" style={{ color:'#e2e8f0' }}>{d.nom}</p>
-                    <p className="text-xs" style={{ color:'rgba(148,163,184,.5)' }}>{d.telephone}</p>
-                  </div>
-                  <span style={{
-                    padding:'2px 10px', borderRadius:20, fontSize:11, fontWeight:500,
-                    ...statusStyle[d.statut]
-                  }}>
-                    {d.statut}
-                  </span>
-                </div>
-
-                <div style={{ borderTop:'0.5px solid rgba(59,130,246,.1)', paddingTop:12 }}>
-                  <div className="flex justify-between">
-                    <div>
-                      <p style={{ fontSize:10, color:'rgba(148,163,184,.4)' }}>Véhicule</p>
-                      <p style={{ fontSize:12, color:'#cbd5e1', marginTop:2 }}>{d.vehicule}</p>
-                    </div>
-                    <div className="text-right">
-                      <p style={{ fontSize:10, color:'rgba(148,163,184,.4)' }}>Missions totales</p>
-                      <p style={{ fontSize:18, fontWeight:500, color:'#60a5fa', marginTop:2 }}>{d.missions}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </main>
+    <PageLayout title={t.driversTitle}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 20 }}>
+        <StatCard label={t.totalDrivers}  value={stats.total}  color="#e2e8f0" icon={icons.total}   />
+        <StatCard label={t.availableStat} value={stats.dispo}  color="#4ade80" icon={icons.avail}   />
+        <StatCard label={t.onMissionStat} value={stats.actifs} color="#60a5fa" icon={icons.mission} />
       </div>
-    </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder={t.searchDriverVehicle}
+          style={{ background:'#0d1426', border:'1px solid rgba(59,130,246,.2)', borderRadius:8, padding:'9px 14px', fontSize:13, color:'#e2e8f0', outline:'none', width:300 }}
+        />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
+        {displayed.map((d, i) => (
+          <div key={d.id} style={{ background:'#0d1426', border:'1px solid rgba(59,130,246,.12)', borderRadius:12, padding:'20px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+              <div style={{
+                width:46, height:46, borderRadius:'50%', flexShrink:0,
+                background: avatarColors[i % avatarColors.length],
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:14, fontWeight:600, color:'#fff',
+              }}>
+                {d.nom?.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
+              </div>
+              <div style={{ flex:1 }}>
+                <p style={{ fontSize:14, fontWeight:500, color:'#e2e8f0' }}>{d.nom}</p>
+                <p style={{ fontSize:11, color:'rgba(148,163,184,.5)', marginTop:2 }}>{d.telephone}</p>
+              </div>
+              <StatusBadge statut={d.statut} />
+            </div>
+
+            <div style={{ borderTop:'1px solid rgba(59,130,246,.08)', paddingTop:14, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div>
+                <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:5 }}>{t.vehicle}</p>
+                <span style={{
+                  fontSize:11, fontWeight:500, padding:'3px 10px', borderRadius:20,
+                  background:'rgba(59,130,246,.1)', color:'#60a5fa',
+                  border:'1px solid rgba(59,130,246,.2)',
+                }}>
+                  {d.vehicule}
+                </span>
+              </div>
+              <div style={{ textAlign:'right' }}>
+                <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:4 }}>{t.totalMissionsLabel}</p>
+                <p style={{ fontSize:20, fontWeight:700, color:'#60a5fa' }}>{d.missions}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </PageLayout>
   )
 }

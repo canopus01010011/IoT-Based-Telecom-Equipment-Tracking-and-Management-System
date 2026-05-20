@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-page:    #0a0f1e;
+  --bg-surface: #070c18;
+  --bg-topbar:  #070c18;
+  --bg-card:    #111827;
+  --bg-input:   #0d1426;
+  --bg-panel:   #0a0f1e;
+  --text-primary:   #e2e8f0;
+  --text-secondary: rgba(148,163,184,.65);
+  --text-muted:     rgba(148,163,184,.4);
+  --border-strong:  rgba(59,130,246,.18);
+  --border-default: rgba(59,130,246,.15);
+  --border-subtle:  rgba(59,130,246,.08);
+}
+
+:root[data-theme="light"] {
+  --bg-page:    #f1f5f9;
+  --bg-surface: #0f172a;
+  --bg-topbar:  #ffffff;
+  --bg-card:    #ffffff;
+  --bg-input:   #f8fafc;
+  --bg-panel:   #ffffff;
+  --text-primary:   #0f172a;
+  --text-secondary: rgba(51,65,85,.75);
+  --text-muted:     rgba(51,65,85,.5);
+  --border-strong:  rgba(59,130,246,.3);
+  --border-default: rgba(59,130,246,.2);
+  --border-subtle:  rgba(59,130,246,.12);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -9,7 +39,7 @@
 }
 
 body {
-  background: #0a0f1e;
+  background: var(--bg-page);
   font-family: system-ui, -apple-system, sans-serif;
 }
 
