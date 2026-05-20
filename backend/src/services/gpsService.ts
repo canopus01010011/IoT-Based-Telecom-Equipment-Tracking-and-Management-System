@@ -7,6 +7,7 @@ interface GPSData {
   lng: number;
   heading?: number;
   speed?: number;
+  battery?: number;
   timestamp?: Date;
 }
 
@@ -23,6 +24,13 @@ export class GPSService {
       }
 
       const timestamp = data.timestamp || new Date();
+
+      if (typeof data.battery === 'number' && Number.isFinite(data.battery)) {
+        await gpsDevice.update({
+          battery_level: Math.max(0, Math.min(100, Math.round(data.battery))),
+          device_status: 'active',
+        });
+      }
 
       // Save the new tracking point
       await TrackingData.create({

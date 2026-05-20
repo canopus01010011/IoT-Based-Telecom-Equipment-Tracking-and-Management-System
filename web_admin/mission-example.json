@@ -1,0 +1,22 @@
+﻿{
+    "technician_id":  "USR-2CAGKU",
+    "scheduled_end_date":  "2024-06-15T17:00:00Z",
+    "site_id":  "STE-YWG6Q9",
+    "equipment_list":  [
+                           {
+                               "quantity":  1,
+                               "equipment_id":  "EQP-37SSLH"
+                           },
+                           {
+                               "quantity":  1,
+                               "equipment_id":  "EQP-FKJ487"
+                           },
+                           {
+                               "quantity":  1,
+                               "equipment_id":  "EQP-H937VQ"
+                           }
+                       ],
+    "driver_id":  "USR-6P2FET",
+    "status":  "pending",
+    "scheduled_start_date":  "2024-06-15T08:30:00Z"
+}

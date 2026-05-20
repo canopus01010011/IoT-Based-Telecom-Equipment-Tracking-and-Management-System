@@ -48,7 +48,7 @@ export class MissionService {
       include: [
         { model: User, as: 'technician', attributes: ['id', 'full_name', 'email'] },
         { model: User, as: 'driver', attributes: ['id', 'full_name', 'email'] },
-        { model: Site, attributes: ['id', 'name', 'address'] },
+        { model: Site, attributes: ['id', 'name', 'address', 'latitude', 'longitude'] },
       ],
       limit,
       offset,

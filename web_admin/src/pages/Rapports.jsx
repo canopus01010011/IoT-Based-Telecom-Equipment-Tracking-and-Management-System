@@ -29,8 +29,13 @@ export default function Rapports() {
   const [search, setSearch]     = useState('')
 
   useEffect(() => {
-    axios.get('/api/rapports', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-      .then(r => setRapports(r.data)).catch(() => setRapports(MOCK))
+    axios.get('/api/reports/missions', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => setRapports((r.data.missions || []).map(m => ({
+        id: m.id, reference: m.id, site: m.Site?.name || '',
+        gps: m.gps_coordinates || '', date: m.scheduled_start_date ? m.scheduled_start_date.split('T')[0] : '',
+        heureDebut: '', heureFin: '', statut: m.status === 'completed' ? 'Approved' : m.status === 'in-progress' ? 'Pending' : m.status,
+        technicien: { nom: m.technician?.full_name || m.driver?.full_name || '', telephone: m.technician?.phone || m.driver?.phone || '' }
+      })))).catch(() => setRapports(MOCK))
   }, [])
 
   const displayed = rapports.filter(r => {

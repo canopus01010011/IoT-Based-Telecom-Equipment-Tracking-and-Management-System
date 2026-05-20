@@ -11,12 +11,27 @@ def on_message(client, userdata, message):
     payload = json.loads(message.payload.decode())
     payload["siteID"] = site_id
     payload["deviceID"] = device_id
-    #requests.post(URL du backend, json=payload)
+    headers = {}
+    if IOT_API_TOKEN:
+        headers["x-iot-token"] = IOT_API_TOKEN
+
+    try:
+        response = requests.post(BACKEND_GPS_URL, json=payload, headers=headers, timeout=5)
+        response.raise_for_status()
+        print(f"Forwarded GPS payload for {device_id} to backend")
+    except requests.RequestException as exc:
+        print(f"Failed to forward GPS payload for {device_id}: {exc}")
 
 if __name__ == "__main__":
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-    client.tls_set(tls_version=ssl.PROTOCOL_TLS)
-    client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+    
+    # Enable TLS/SSL only if using port 8883 (standard secure MQTT port) or if HiveMQ broker is targeted
+    if BROKER_PORT == 8883 or (BROKER_HOST and "hivemq" in BROKER_HOST):
+        client.tls_set(tls_version=ssl.PROTOCOL_TLS)
+        
+    if MQTT_USERNAME and MQTT_PASSWORD:
+        client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+        
     client.connect(BROKER_HOST, BROKER_PORT)
     print("Connected to the broker MQTT")
     client.on_message = on_message

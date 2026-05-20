@@ -10,8 +10,8 @@ export default function CreateUser() {
   const navigate = useNavigate()
   const [role, setRole] = useState('')
   const [form, setForm] = useState({
-    nom:'', identifiant:'', cin:'', email:'', telephone:'',
-    password:'', confirm:'', vehicule:'', specialite:''
+    full_name:'', email:'', phone:'',
+    password:'', confirm:''
   })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -19,7 +19,7 @@ export default function CreateUser() {
 
   const ROLES = [
     { id:'driver',     label:t.driver,     desc:t.driverDesc,     icon:'🚛', color:'#3b82f6', bg:'rgba(59,130,246,.1)', border:'rgba(59,130,246,.3)'  },
-    { id:'technicien', label:t.technician, desc:t.technicianDesc, icon:'🔧', color:'#4ade80', bg:'rgba(34,197,94,.08)', border:'rgba(34,197,94,.25)'  },
+    { id:'technician', label:t.technician, desc:t.technicianDesc, icon:'🔧', color:'#4ade80', bg:'rgba(34,197,94,.08)', border:'rgba(34,197,94,.25)'  },
   ]
 
   const set = e => setForm({ ...form, [e.target.name]: e.target.value })
@@ -33,11 +33,8 @@ export default function CreateUser() {
     setLoading(true)
     try {
       await axios.post('/api/users', {
-        nom: form.nom, identifiant: form.identifiant, cin: form.cin,
-        email: form.email, telephone: form.telephone,
-        password: form.password, role,
-        vehicule:   role === 'driver'     ? form.vehicule   : undefined,
-        specialite: role === 'technicien' ? form.specialite : undefined,
+        full_name: form.full_name, email: form.email, phone: form.phone,
+        password: form.password, role
       }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       setSuccess(true)
       setTimeout(() => navigate('/dashboard/drivers'), 1500)
@@ -89,22 +86,13 @@ export default function CreateUser() {
 
         <FormCard title={t.personalInfo}>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-            <div><label style={lbl}>{t.fullName}</label><input name="nom" value={form.nom} onChange={set} placeholder="John Smith" required style={inp} /></div>
-            <div><label style={lbl}>{t.identifier}</label><input name="identifiant" value={form.identifiant} onChange={set} placeholder={role === 'driver' ? 'DRV-001' : role === 'technicien' ? 'TECH-001' : 'ID-001'} required style={inp} /></div>
-            <div><label style={lbl}>{t.nationalId}</label><input name="cin" value={form.cin} onChange={set} placeholder="123456789" required style={inp} /></div>
-            <div><label style={lbl}>{t.phoneNumber}</label><input type="tel" name="telephone" value={form.telephone} onChange={set} placeholder="+213 5XX XX XX XX" required style={inp} /></div>
+            <div><label style={lbl}>{t.fullName}</label><input name="full_name" value={form.full_name} onChange={set} placeholder="John Smith" required style={inp} /></div>
+            <div><label style={lbl}>{t.phoneNumber}</label><input type="tel" name="phone" value={form.phone} onChange={set} placeholder="+213 5XX XX XX XX" required style={inp} /></div>
             <div style={{ gridColumn:'1 / -1' }}><label style={lbl}>{t.emailAddress}</label><input type="email" name="email" value={form.email} onChange={set} placeholder="john@erctrac.dz" required style={inp} /></div>
           </div>
         </FormCard>
 
-        {role === 'driver' && (
-          <FormCard title={t.driverInfo}>
-            <label style={lbl}>{t.vehiclePlate}</label>
-            <input name="vehicule" value={form.vehicule} onChange={set} placeholder="Van — 16-DZ-142" style={inp} />
-          </FormCard>
-        )}
-
-        {role === 'technicien' && (
+        {role === 'technician' && (
           <FormCard title={t.technicianInfo}>
             <label style={lbl}>{t.specialty}</label>
             <select name="specialite" value={form.specialite} onChange={set} style={{ ...inp, cursor:'pointer' }}>
