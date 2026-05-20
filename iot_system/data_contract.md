@@ -25,8 +25,8 @@ JSON Format
 ```
 
 ## Frequency
-Every 10 seconds for the GPS  
-Every 30 seconds for the battery percentage
+Every 5 seconds for the GPS  
+Every 15 seconds for the battery percentage
 
 ## Producer
 gps_simulator.py → publishes to MQTT broker (HiveMQ)

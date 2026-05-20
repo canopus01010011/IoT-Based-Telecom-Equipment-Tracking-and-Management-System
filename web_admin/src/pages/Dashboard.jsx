@@ -6,7 +6,7 @@ import StatusBadge  from '../components/StatusBadge'
 import DataTable    from '../components/DataTable'
 import { useT }     from '../context/LanguageContext'
 
-const MOCK_STATS    = { totalMissions: 142, enCours: 38, incidents: 7, rapportsAttente: 16, drivers: 5, terminees: 85 }
+const MOCK_STATS    = { totalMissions: 142, inProgressMissions: 38, completedMissions: 85, pendingMissions: 16, totalDrivers: 5 }
 const MOCK_RECENTES = [
   { id:1, ref:'MSN-091', site:'BTS Bab Ezzouar', driver:'K. Benali',  equip:'Fiber + Antenna',  date:'04/12/2024', statut:'In Progress' },
   { id:2, ref:'MSN-090', site:'Kouba Tower',      driver:'A. Hamid',   equip:'Network Cabling',  date:'04/11/2024', statut:'In Progress' },
@@ -32,19 +32,24 @@ export default function Dashboard() {
   const [missions, setMissions] = useState([])
 
   useEffect(() => {
-    axios.get('/api/dashboard/stats', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-      .then(r => setStats(r.data)).catch(() => setStats(MOCK_STATS))
+    axios.get('/api/reports/stats/dashboard', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => setStats(r.data.data)).catch(() => setStats(MOCK_STATS))
     axios.get('/api/missions?limit=5', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-      .then(r => setMissions(r.data)).catch(() => setMissions(MOCK_RECENTES))
+      .then(r => setMissions((r.data.missions || []).map(m => ({
+        id: m.id, ref: m.id, site: m.Site?.name || '', driver: m.driver?.full_name || '',
+        equip: Array.isArray(m.equipment_list) ? m.equipment_list.map(e => e.equipment_id).join(', ') : '',
+        date: m.scheduled_start_date ? m.scheduled_start_date.split('T')[0] : '',
+        statut: m.status
+      })))).catch(() => setMissions(MOCK_RECENTES))
   }, [])
 
   const cards = [
-    { label: t.totalMissions,  value: stats.totalMissions,  color: '#e2e8f0', icon: icons.total    },
-    { label: t.inProgressStat, value: stats.enCours,        color: '#60a5fa', icon: icons.progress  },
-    { label: t.completedStat,  value: stats.terminees,      color: '#4ade80', icon: icons.completed },
-    { label: t.incidentsStat,  value: stats.incidents,      color: '#f87171', icon: icons.incident  },
-    { label: t.pendingReports, value: stats.rapportsAttente, color: '#fbbf24', icon: icons.reports  },
-    { label: t.activeDrivers,  value: stats.drivers,        color: '#a78bfa', icon: icons.drivers   },
+    { label: t.totalMissions,   value: stats.totalMissions,     color: '#e2e8f0', icon: icons.total    },
+    { label: t.inProgressStat,  value: stats.inProgressMissions,color: '#60a5fa', icon: icons.progress  },
+    { label: t.completedStat,   value: stats.completedMissions, color: '#4ade80', icon: icons.completed },
+    { label: t.incidentsStat,   value: stats.pendingMissions,   color: '#f87171', icon: icons.incident  },
+    { label: t.pendingReports,  value: stats.pendingMissions,   color: '#fbbf24', icon: icons.reports   },
+    { label: t.activeDrivers,   value: stats.totalDrivers,      color: '#a78bfa', icon: icons.drivers   },
   ]
 
   return (

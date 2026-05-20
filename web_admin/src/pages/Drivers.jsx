@@ -27,8 +27,11 @@ export default function Drivers() {
   const [search, setSearch]   = useState('')
 
   useEffect(() => {
-    axios.get('/api/drivers', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-      .then(r => setDrivers(r.data)).catch(() => setDrivers(MOCK))
+    axios.get('/api/users?role=driver', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => setDrivers((r.data.users || []).map(u => ({
+        id: u.id, nom: u.full_name || u.nom, telephone: u.phone || u.telephone,
+        vehicule: u.vehicle || u.vehicule || '', missions: u.missions || 0, statut: u.status || 'Available'
+      })))).catch(() => setDrivers(MOCK))
   }, [])
 
   const displayed = drivers.filter(d =>

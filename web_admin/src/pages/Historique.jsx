@@ -38,7 +38,11 @@ export default function Historique() {
 
   useEffect(() => {
     axios.get('/api/missions', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-      .then(r => setMissions(r.data)).catch(() => setMissions(MOCK))
+      .then(r => setMissions((r.data.missions || []).map(m => ({
+        id: m.id, ref: m.id, site: m.Site?.name || '', driver: m.driver?.full_name || '',
+        equip: Array.isArray(m.equipment_list) ? m.equipment_list.map(e => e.equipment_id).join(', ') : '',
+        date: m.scheduled_start_date ? m.scheduled_start_date.split('T')[0] : '', statut: m.status
+      })))).catch(() => setMissions(MOCK))
   }, [])
 
   const filtered = missions.filter(m => {

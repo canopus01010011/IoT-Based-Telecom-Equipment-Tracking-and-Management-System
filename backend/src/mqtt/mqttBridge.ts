@@ -6,15 +6,19 @@ import { emitGPSUpdate } from '../sockets/socketHandler.js';
 let client: mqtt.MqttClient | null = null;
 
 export const startMQTT = () => {
-  const brokerUrl = `${mqttConfig.protocol}://${mqttConfig.host}:${mqttConfig.port}`;
+  const brokerUrl = mqttConfig.brokerUrl || `${mqttConfig.protocol}://${mqttConfig.host}:${mqttConfig.port}`;
   
   console.log(`📡 Connecting to MQTT broker: ${brokerUrl}`);
   
-  client = mqtt.connect(brokerUrl, {
+  const connectOptions: mqtt.IClientOptions = {
     clientId: mqttConfig.clientId,
     reconnectPeriod: 5000,
     connectTimeout: 30000,
-  });
+  };
+  if (mqttConfig.username) connectOptions.username = mqttConfig.username;
+  if (mqttConfig.password) connectOptions.password = mqttConfig.password;
+  
+  client = mqtt.connect(brokerUrl, connectOptions);
 
   client.on('connect', () => {
     console.log('✅ MQTT Connected to broker');
@@ -43,10 +47,10 @@ export const startMQTT = () => {
       }
 
       // Extract GPS coordinates (support both lat/lng and latitude/longitude)
-      const lat = payload.lat || payload.latitude;
-      const lng = payload.lng || payload.longitude;
+      const lat = payload.lat ?? payload.latitude;
+      const lng = payload.lng ?? payload.longitude;
       
-      if (!lat || !lng) {
+      if (lat == null || lng == null) {
         console.error('❌ Invalid GPS data: missing lat/lng', payload);
         return;
       }
@@ -56,10 +60,11 @@ export const startMQTT = () => {
       // Save to database
       const result = await GPSService.saveGPSData({
         device_id: deviceId,
-        lat: lat,
-        lng: lng,
+        lat: Number(lat),
+        lng: Number(lng),
         speed: payload.speed,
         heading: payload.heading,
+        battery: payload.battery,
         timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),
       });
 
