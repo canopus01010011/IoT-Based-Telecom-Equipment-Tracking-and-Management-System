@@ -8,6 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "echo 'no build needed'",
     "seed": "tsx src/utils/seedDatabase.ts",
+    "seed:admin": "tsx src/utils/ensureAdminUser.ts",
     "start": "tsx src/server.ts"
   },
   "keywords": [],

@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import sequelize from './config/database.js';
 import { initializeSocket } from './sockets/socketHandler.js';
 import { startMQTT } from './mqtt/mqttBridge.js';
+import { mqttConfig } from './config/mqttConfig.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -27,6 +28,7 @@ async function startServer() {
     
     // Start server
     httpServer.listen(PORT, () => {
+      const mqttBroker = mqttConfig.brokerUrl || `${mqttConfig.host}:${mqttConfig.port}`;
       console.log(`
 ╔══════════════════════════════════════════════════════════╗
 ║                                                          ║
@@ -35,7 +37,7 @@ async function startServer() {
 ║   📍 Server: http://localhost:${PORT}                   ║
 ║   💚 Health: http://localhost:${PORT}/health            ║
 ║   🔌 Socket.IO: Active                                  ║
-║   📡 MQTT Bridge: Connected to ${process.env.MQTT_HOST || 'localhost'}:${process.env.MQTT_PORT || '1883'}
+║   📡 MQTT Bridge: Connected to ${mqttBroker}
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
       `);
