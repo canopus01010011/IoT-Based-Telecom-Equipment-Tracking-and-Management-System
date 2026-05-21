@@ -11,6 +11,8 @@ const ROUTES_BY_CONTAINER = {
   'CTR-001': { site: 'OS-Draria', departLat: 36.706559, departLng: 3.167040, destLat: 36.720143, destLng: 2.994913 },
   'CTR-002': { site: 'OS-Meftah', departLat: 36.706686, departLng: 3.167203, destLat: 36.620460, destLng: 3.222544 },
   'CTR-003': { site: 'OS-Cheraga', departLat: 36.707079, departLng: 3.166759, destLat: 36.759147, destLng: 2.963507 },
+  'CTR-004': { site: 'OS-BabaHassen', departLat: 36.706533, departLng: 3.166932, destLat: 36.697948, destLng: 2.978671 },
+  'CTR-005': { site: 'OS-Bouzareah', departLat: 36.707094, departLng: 3.166948, destLat: 36.774056, destLng: 3.008713 },
 }
 
 const routeForContainer = (containerId) => ROUTES_BY_CONTAINER[containerId] || {}
@@ -19,8 +21,8 @@ const MOCK = [
   { id:1, ref:'MSN-091', site:'OS-Draria',  driver:'K. Benali',  technicien:'A. Hamid',   depart:'08:30', duree:'3h 45min', statut:'En Route',  lat:36.7499, lng:3.0499, departLat:36.706559, departLng:3.167040, destLat:36.720143, destLng:2.994913, route:'Draria' },
   { id:2, ref:'MSN-090', site:'OS-Meftah',  driver:'M. Saadi',   technicien:'Y. Brahim',  depart:'09:00', duree:'2h 10min', statut:'En Route',  lat:36.6335, lng:3.1335, departLat:36.706686, departLng:3.167203, destLat:36.620460, destLng:3.222544, route:'Meftah' },
   { id:3, ref:'MSN-089', site:'OS-Cheraga',  driver:'O. Meziane', technicien:'N. Oukil',   depart:'07:45', duree:'1h 20min', statut:'En Route',  lat:36.7675, lng:2.9598, departLat:36.707079, departLng:3.166759, destLat:36.759147, destLng:2.963507, route:'Cheraga' },
-  { id:4, ref:'MSN-088', site:'BTS Bab Ezzouar',  driver:'K. Benali',  technicien:'R. Ferhat',  depart:'10:00', duree:'—',        statut:'Pending',   lat:36.7372, lng:3.1897, destLat:36.7372, destLng:3.1897, route:'—' },
-  { id:5, ref:'MSN-087', site:'BTS Bab Ezzouar',  driver:'A. Hamid',   technicien:'A. Hamid',   depart:'06:30', duree:'4h 00min', statut:'Completed', lat:36.7372, lng:3.1897, destLat:36.7372, destLng:3.1897, route:'—' },
+  { id:4, ref:'MSN-088', site:'OS-BabaHassen',  driver:'K. Benali',  technicien:'Y. Brahim',  depart:'10:00', duree:'2h 30min', statut:'En Route',   lat:36.7055, lng:3.0450, departLat:36.706533, departLng:3.166932, destLat:36.697948, destLng:2.978671, route:'BabaHassen' },
+  { id:5, ref:'MSN-087', site:'OS-Bouzareah',  driver:'M. Saadi',   technicien:'N. Oukil',   depart:'06:30', duree:'1h 50min', statut:'En Route', lat:36.7450, lng:3.0820, departLat:36.707094, departLng:3.166948, destLat:36.774056, destLng:3.008713, route:'Bouzareah' },
   { id:6, ref:'MSN-086', site:'BTS Bab Ezzouar',  driver:'M. Saadi',   technicien:'Y. Brahim',  depart:'11:00', duree:'—',        statut:'Cancelled', lat:36.7372, lng:3.1897, destLat:36.7372, destLng:3.1897, route:'—' },
 ]
 
@@ -124,18 +126,25 @@ function MapModal({ mission, onClose }) {
           </div>
         </div>
         <div ref={mapRef} style={{ width:'100%', height:440 }} />
-        <div style={{ padding:'12px 18px', background:'#0d1426', borderTop:'0.5px solid rgba(59,130,246,.1)', display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+        <div style={{ padding:'12px 18px', background:'#0d1426', borderTop:'0.5px solid rgba(59,130,246,.1)', display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14 }}>
           {[
             { label: t.driver,        value: `🚛 ${mission.driver}` },
             { label: t.departureTime, value: `⏰ ${mission.depart}` },
             { label: t.duration,      value: `⏱ ${mission.duree}`  },
             { label: t.gpsPosition,   value: `📍 ${mission.lat != null ? Number(mission.lat).toFixed(4) : '—'}, ${mission.lng != null ? Number(mission.lng).toFixed(4) : '—'}` },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:3 }}>{label}</p>
-              <p style={{ fontSize:13, color: label === t.gpsPosition ? '#60a5fa' : '#e2e8f0', fontWeight:500 }}>{value}</p>
-            </div>
-          ))}
+            { label: t.battery, value: mission.battery != null ? `${mission.battery}%` : '—', battery: mission.battery },
+          ].map(({ label, value, battery }) => {
+            let batteryColor = '#4ade80'
+            if (battery != null && battery < 20) batteryColor = '#ef4444'
+            else if (battery != null && battery < 60) batteryColor = '#eab308'
+            const isBattery = label === t.battery
+            return (
+              <div key={label}>
+                <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:3 }}>{label}</p>
+                <p style={{ fontSize:13, color: isBattery ? batteryColor : label === t.gpsPosition ? '#60a5fa' : '#e2e8f0', fontWeight:500 }}>{isBattery ? `🔋 ${value}` : value}</p>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
@@ -178,6 +187,7 @@ export default function SuiviMissions() {
               gpsId: g.id,
               lat: point?.latitude != null ? parseFloat(point.latitude) : null,
               lng: point?.longitude != null ? parseFloat(point.longitude) : null,
+              battery: g.battery_level != null ? g.battery_level : null,
             }
           })
         }
@@ -195,6 +205,7 @@ export default function SuiviMissions() {
               statut: m.status === 'in-progress' ? 'En Route' : m.status === 'pending' ? 'Pending' : m.status === 'completed' ? 'Completed' : m.status,
               lat: existing?.lat ?? gps.lat ?? null,
               lng: existing?.lng ?? gps.lng ?? null,
+              battery: gps.battery ?? existing?.battery ?? null,
               departLat: route.departLat ?? existing?.departLat ?? null,
               departLng: route.departLng ?? existing?.departLng ?? null,
               destLat: route.destLat ?? siteLat,
@@ -227,6 +238,7 @@ export default function SuiviMissions() {
               technicien: m.technician?.full_name || '', depart: existing?.depart ?? '', duree: existing?.duree ?? '',
               statut: m.status === 'in-progress' ? 'En Route' : m.status === 'pending' ? 'Pending' : m.status === 'completed' ? 'Completed' : m.status,
               lat: existing?.lat ?? null, lng: existing?.lng ?? null,
+              battery: existing?.battery ?? null,
               departLat: route.departLat ?? existing?.departLat ?? null,
               departLng: route.departLng ?? existing?.departLng ?? null,
               destLat: route.destLat ?? siteLat,
@@ -244,7 +256,7 @@ export default function SuiviMissions() {
     socket.on('gps-update', (data) => {
       setMissions(prev => prev.map(m => {
         if (m.gpsId === data.equipmentId) {
-          return { ...m, lat: data.latitude, lng: data.longitude }
+          return { ...m, lat: data.latitude, lng: data.longitude, battery: data.battery ?? m.battery }
         }
         return m
       }))

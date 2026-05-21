@@ -55,6 +55,7 @@ export class GPSService {
         gpsId: gpsDevice.id,
         lat: data.lat,
         lng: data.lng,
+        battery: data.battery,
       };
     } catch (error) {
       console.error('Error saving GPS data:', error);

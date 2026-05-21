@@ -81,14 +81,30 @@ async function seedDatabase() {
 
     // 3. Seed Sites
     console.log('🌱 Seeding Sites...');
-    const site = await Site.create({
-      id: 'STE-ALGER',
-      name: 'BTS Bab Ezzouar',
-      address: 'Bab Ezzouar, Alger, Algérie',
-      latitude: 36.7372,
-      longitude: 3.1897,
-    });
-    console.log('✅ Seeded Site: BTS Bab Ezzouar.');
+    const sites = await Site.bulkCreate([
+      {
+        id: 'STE-ALGER',
+        name: 'BTS Bab Ezzouar',
+        address: 'Bab Ezzouar, Alger, Algérie',
+        latitude: 36.7372,
+        longitude: 3.1897,
+      },
+      {
+        id: 'STE-BABAHASSEN',
+        name: 'OS-BabaHassen',
+        address: 'Baba Hassen, Alger, Algérie',
+        latitude: 36.697948,
+        longitude: 2.978671,
+      },
+      {
+        id: 'STE-BOUZAREAH',
+        name: 'OS-Bouzareah',
+        address: 'Bouzareah, Alger, Algérie',
+        latitude: 36.774056,
+        longitude: 3.008713,
+      },
+    ]);
+    console.log(`✅ Seeded ${sites.length} Sites.`);
 
     // 4. Seed Containers
     console.log('🌱 Seeding Containers...');
@@ -96,6 +112,8 @@ async function seedDatabase() {
       { id: 'CTR-001', qr_code: 'CTR-QR-001', capacity: 150, status: 'in_transit' },
       { id: 'CTR-002', qr_code: 'CTR-QR-002', capacity: 150, status: 'in_transit' },
       { id: 'CTR-003', qr_code: 'CTR-QR-003', capacity: 150, status: 'in_transit' },
+      { id: 'CTR-004', qr_code: 'CTR-QR-004', capacity: 150, status: 'in_transit' },
+      { id: 'CTR-005', qr_code: 'CTR-QR-005', capacity: 150, status: 'in_transit' },
     ]);
     console.log(`✅ Seeded ${containers.length} Containers.`);
 
@@ -120,6 +138,20 @@ async function seedDatabase() {
         id: 'GPS-003',
         container_id: 'CTR-003',
         device_serial_number: 'package_003',
+        battery_level: 100,
+        device_status: 'active',
+      },
+      {
+        id: 'GPS-004',
+        container_id: 'CTR-004',
+        device_serial_number: 'package_004',
+        battery_level: 100,
+        device_status: 'active',
+      },
+      {
+        id: 'GPS-005',
+        container_id: 'CTR-005',
+        device_serial_number: 'package_005',
         battery_level: 100,
         device_status: 'active',
       },
@@ -167,6 +199,30 @@ async function seedDatabase() {
         technician_id: 'USR-TEC003',
         container_id: 'CTR-003',
         site_id: 'STE-ALGER',
+        equipment_list: [],
+      },
+      {
+        id: 'MIS-088',
+        status: 'in-progress',
+        scheduled_start_date: today,
+        scheduled_end_date: tomorrow,
+        start_date: today,
+        driver_id: 'USR-DRV001',
+        technician_id: 'USR-TEC002',
+        container_id: 'CTR-004',
+        site_id: 'STE-BABAHASSEN',
+        equipment_list: [],
+      },
+      {
+        id: 'MIS-087',
+        status: 'in-progress',
+        scheduled_start_date: today,
+        scheduled_end_date: tomorrow,
+        start_date: today,
+        driver_id: 'USR-DRV002',
+        technician_id: 'USR-TEC003',
+        container_id: 'CTR-005',
+        site_id: 'STE-BOUZAREAH',
         equipment_list: [],
       },
     ]);
