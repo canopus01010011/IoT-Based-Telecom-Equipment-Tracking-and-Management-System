@@ -36,7 +36,7 @@ export const getIO = () => {
   return io;
 };
 
-export const emitGPSUpdate = (equipmentId: string, equipmentName: string, lat: number, lng: number) => {
+export const emitGPSUpdate = (equipmentId: string, equipmentName: string, lat: number, lng: number, battery?: number) => {
   if (!io) return;
   
   io.to('tracking').emit('gps-update', {
@@ -44,6 +44,7 @@ export const emitGPSUpdate = (equipmentId: string, equipmentName: string, lat: n
     equipmentName,
     latitude: lat,
     longitude: lng,
+    battery,
     timestamp: new Date().toISOString(),
   });
 };

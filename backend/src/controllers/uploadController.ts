@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { UploadService } from '../services/uploadService.js';
 import { AIService } from '../services/aiService.js';
-import { Equipment, Mission } from '../models/index.js';
+import { Equipment, Mission, Report } from '../models/index.js';
 
 export class UploadController {
   /**
@@ -36,11 +36,6 @@ export class UploadController {
 
       // Upload to Cloudinary
       const uploadResult = await UploadService.uploadEquipmentPhoto(file.buffer, equipmentId as string);
-
-      // Update equipment with photo URL
-      await equipment.update({
-        avatar_url: uploadResult.secure_url,
-      } );
 
       res.json({
         success: true,
@@ -88,6 +83,17 @@ export class UploadController {
 
       // Upload to Cloudinary
       const uploadResult = await UploadService.uploadDeliveryPhoto(file.buffer, missionId as string);
+      const [report] = await Report.findOrCreate({
+        where: { mission_id: missionId as string },
+        defaults: {
+          mission_id: missionId as string,
+          description: 'Delivery proof',
+          delivery_photo_url: [],
+        },
+      });
+      await report.update({
+        delivery_photo_url: [...report.delivery_photo_url, uploadResult.secure_url],
+      });
 
       res.json({
         success: true,
@@ -97,6 +103,7 @@ export class UploadController {
           publicId: uploadResult.public_id,
           validation: validation,
           missionId: missionId,
+          reportId: report.id,
         },
       });
     } catch (error) {
@@ -156,6 +163,20 @@ export class UploadController {
             publicId: uploadResult.public_id,
           });
         }
+      }
+
+      if (missionId && uploads.length > 0) {
+        const [report] = await Report.findOrCreate({
+          where: { mission_id: missionId },
+          defaults: {
+            mission_id: missionId,
+            description: 'Delivery proof',
+            delivery_photo_url: [],
+          },
+        });
+        await report.update({
+          delivery_photo_url: [...report.delivery_photo_url, ...uploads.map(upload => upload.url)],
+        });
       }
 
       res.json({

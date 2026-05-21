@@ -1,135 +1,120 @@
 import { Model, DataTypes } from 'sequelize';
 import type { Optional } from 'sequelize';
-import  sequelize from '../config/database.js';
+import sequelize from '../config/database.js';
+import { generateCode } from '../utils/idGenerator.js';
+
+export interface MissionEquipment {
+  equipment_id: string;
+  quantity: number;
+}
 
 interface MissionAttributes {
   id: string;
-  title: string;
-  description: string;
-  status: 'pending' | 'in_transit' | 'driver_scanned' | 'delivered' | 'cancelled' ;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'pending' | 'in-progress' | 'completed';
+  scheduled_start_date: Date;
+  scheduled_end_date: Date;
+  start_date?: Date;
+  end_date?: Date;
   technician_id: string;
   driver_id: string;
-  equipment_id: string;
-  quantity: number;  // ✅ ADD THIS - how many units to deliver
+  equipment_list: MissionEquipment[];
+  container_id?: string;
   site_id: string;
-  qr_code: string;
-  started_at?: Date;
-  driver_scanned_at?: Date;
-  technician_scanned_at?: Date;
-  delivered_at?: Date;
-  created_by: string;
-  created_at?: Date;
-  updated_at?: Date;
+  creation_date?: Date;
 }
 
-type MissionCreationAttributes = Optional<MissionAttributes, 'id' | 'created_at' | 'updated_at' | 'started_at' | 'driver_scanned_at' | 'technician_scanned_at' | 'delivered_at'>;
+type MissionCreationAttributes = Optional<
+  MissionAttributes,
+  'id' | 'status' | 'start_date' | 'end_date' | 'container_id' | 'creation_date'
+>;
 
 class Mission extends Model<MissionAttributes, MissionCreationAttributes> implements MissionAttributes {
   public id!: string;
-  public title!: string;
-  public description!: string;
-  public status!: 'pending' | 'in_transit' | 'driver_scanned' | 'delivered' | 'cancelled';
-  public priority!: 'low' | 'medium' | 'high' | 'urgent';
+  public status!: 'pending' | 'in-progress' | 'completed';
+  public scheduled_start_date!: Date;
+  public scheduled_end_date!: Date;
+  public start_date?: Date;
+  public end_date?: Date;
   public technician_id!: string;
   public driver_id!: string;
-  public equipment_id!: string;
-  public quantity!: number;  // ✅ ADD THIS
+  public equipment_list!: MissionEquipment[];
+  public container_id?: string;
   public site_id!: string;
-  public qr_code!: string;
-  public started_at?: Date;
-  public driver_scanned_at?: Date;
-  public technician_scanned_at?: Date;
-  public delivered_at?: Date;
-  public created_by!: string;
-  public created_at!: Date;
-  public updated_at!: Date;
+  public creation_date!: Date;
 }
 
 Mission.init({
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.STRING,
+    defaultValue: () => generateCode('MIS'),
+    field: 'mission_id',
     primaryKey: true
   },
-  title: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  description: {
-    type: DataTypes.TEXT,
-    allowNull: false
-  },
   status: {
-    type: DataTypes.ENUM('pending', 'in_transit', 'driver_scanned', 'delivered', 'cancelled'),
+    type: DataTypes.ENUM('pending', 'in-progress', 'completed'),
+    field: 'mission_status',
     allowNull: false,
     defaultValue: 'pending'
   },
-  priority: {
-    type: DataTypes.ENUM('low', 'medium', 'high', 'urgent'),
-    allowNull: false,
-    defaultValue: 'medium'
+  scheduled_start_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: false
+  },
+  scheduled_end_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: false
+  },
+  start_date: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  end_date: {
+    type: DataTypes.DATE,
+    allowNull: true
   },
   technician_id: {
-    type: DataTypes.UUID,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'users',
-      key: 'id'
+      key: 'user_id'
     }
   },
   driver_id: {
-    type: DataTypes.UUID,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'users',
-      key: 'id'
+      key: 'user_id'
     }
   },
-  equipment_id: {
-    type: DataTypes.UUID,
+  equipment_list: {
+    type: DataTypes.JSONB,
     allowNull: false,
+    defaultValue: []
+  },
+  container_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
     references: {
-      model: 'equipment',
-      key: 'id'
+      model: 'containers',
+      key: 'container_id'
     }
-  },
-  quantity: {  // ✅ ADD THIS
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 1
   },
   site_id: {
-    type: DataTypes.UUID,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'sites',
-      key: 'id'
-    }
-  },
-  qr_code: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-    unique: true
-  },
-  started_at: DataTypes.DATE,
-  driver_scanned_at: DataTypes.DATE,
-  technician_scanned_at: DataTypes.DATE,
-  delivered_at: DataTypes.DATE,
-  created_by: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
+      key: 'site_id'
     }
   }
 }, {
   sequelize,
   tableName: 'missions',
   timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  createdAt: 'creation_date',
+  updatedAt: false
 });
 
 export default Mission;

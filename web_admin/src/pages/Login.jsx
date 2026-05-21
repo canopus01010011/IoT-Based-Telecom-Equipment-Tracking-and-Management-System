@@ -4,9 +4,6 @@ import logo from '../assets/logo.js'
 import { useNavigate, Link } from 'react-router-dom'
 import { useT } from '../context/LanguageContext'
 
-const DEMO_EMAIL    = 'admin@erctrac.dz'
-const DEMO_PASSWORD = 'admin123'
-
 const highlights = [
   { icon: '📡', text: 'Live mission & GPS tracking' },
   { icon: '🔧', text: 'Telecom equipment management' },
@@ -28,15 +25,11 @@ export default function Login() {
     setLoading(true)
     try {
       const res = await axios.post('/api/auth/login', { email, password })
-      localStorage.setItem('token', res.data.token)
+      localStorage.setItem('token', res.data.tokens.accessToken)
       navigate('/dashboard')
     } catch (err) {
-      if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-        localStorage.setItem('token', 'demo-token')
-        navigate('/dashboard')
-        return
-      }
-      setError(err.response?.data?.message || t.invalidCredentials)
+      localStorage.removeItem('token')
+      setError(err.response?.data?.error || err.response?.data?.message || t.invalidCredentials)
     } finally {
       setLoading(false)
     }

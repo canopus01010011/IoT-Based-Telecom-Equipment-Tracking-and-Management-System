@@ -25,7 +25,7 @@ export default function Settings() {
     if (mdpNouv && mdpNouv !== mdpConf) { setSaveError(t.passwordMismatch); return }
     setLoading(true)
     try {
-      const payload = { nom, email }
+      const payload = { full_name: nom, email }
       if (mdpActuel && mdpNouv) { payload.currentPassword = mdpActuel; payload.newPassword = mdpNouv }
       await axios.patch('/api/auth/profile', payload, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       setMdpA(''); setMdpN(''); setMdpC('')

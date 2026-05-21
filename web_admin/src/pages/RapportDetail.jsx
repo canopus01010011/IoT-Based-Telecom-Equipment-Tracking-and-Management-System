@@ -29,15 +29,27 @@ export default function RapportDetail() {
   const [actionError, setActionError] = useState('')
 
   useEffect(() => {
-    axios.get(`/api/rapports/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-      .then(r => setRapport(r.data)).catch(() => setRapport(MOCK))
+    axios.get(`/api/missions/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => setRapport(d => {
+        const raw = r.data.mission || r.data;
+        if (raw.technicien) return raw; // already has mock-like format
+        return {
+          ...d, id: raw.id, reference: raw.id, site: raw.Site?.name || raw.site || '',
+          gps: raw.gps_coordinates || '', date: raw.scheduled_start_date ? raw.scheduled_start_date.split('T')[0] : '',
+          heureDebut: '', heureFin: '',
+          statut: raw.status === 'completed' ? 'Approved' : raw.status === 'in-progress' ? 'Pending' : raw.status,
+          technicien: { nom: raw.technician?.full_name || raw.driver?.full_name || '', telephone: raw.technician?.phone || raw.driver?.phone || '' },
+          travaux: raw.description || raw.travaux || '', materiel: Array.isArray(raw.equipment_list) ? raw.equipment_list.map(e => e.equipment_id) : (raw.materiel || []),
+          incidents: raw.incidents || ''
+        };
+      })).catch(() => setRapport(MOCK))
   }, [id])
 
   const handleAction = async (action) => {
     setLoading(true)
     setActionError('')
     try {
-      await axios.patch(`/api/rapports/${id}`, { statut: action, commentaire }, {
+      await axios.patch(`/api/missions/${id}/status`, { status: action === 'Approved' ? 'completed' : 'in-progress' }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
       setActionDone(action)

@@ -6,25 +6,29 @@ import { emitGPSUpdate } from '../sockets/socketHandler.js';
 let client: mqtt.MqttClient | null = null;
 
 export const startMQTT = () => {
-  const brokerUrl = `${mqttConfig.protocol}://${mqttConfig.host}:${mqttConfig.port}`;
+  const brokerUrl = mqttConfig.brokerUrl || `${mqttConfig.protocol}://${mqttConfig.host}:${mqttConfig.port}`;
   
   console.log(`📡 Connecting to MQTT broker: ${brokerUrl}`);
   
-  client = mqtt.connect(brokerUrl, {
+  const connectOptions: mqtt.IClientOptions = {
     clientId: mqttConfig.clientId,
     reconnectPeriod: 5000,
     connectTimeout: 30000,
-  });
+  };
+  if (mqttConfig.username) connectOptions.username = mqttConfig.username;
+  if (mqttConfig.password) connectOptions.password = mqttConfig.password;
+  
+  client = mqtt.connect(brokerUrl, connectOptions);
 
   client.on('connect', () => {
     console.log('✅ MQTT Connected to broker');
     
-    // Subscribe to all GPS topics (format: gps/DEVICE_ID)
-    client?.subscribe('gps/+', { qos: 1 }, (err) => {
+    // Subscribe to all GPS topics (format: ericsson/sites/+/+/gps)
+    client?.subscribe('ericsson/sites/+/+/gps', { qos: 1 }, (err) => {
       if (err) {
-        console.error('❌ Failed to subscribe to gps/+:', err);
+        console.error('❌ Failed to subscribe to ericsson/sites/+/+/gps:', err);
       } else {
-        console.log('✅ Subscribed to topic: gps/+');
+        console.log('✅ Subscribed to topic: ericsson/sites/+/+/gps');
       }
     });
   });
@@ -33,8 +37,9 @@ export const startMQTT = () => {
     try {
       const payload = JSON.parse(message.toString());
       
-      // Extract device_id from topic (gps/ESP32-001 -> ESP32-001)
-      const deviceId = topic.split('/')[1];
+      // Extract device_id from topic (ericsson/sites/site_alger/package_001/gps -> package_001)
+      const parts = topic.split('/');
+      const deviceId = parts[3];
       
       if (!deviceId) {
         console.error('❌ Invalid topic format:', topic);
@@ -42,10 +47,10 @@ export const startMQTT = () => {
       }
 
       // Extract GPS coordinates (support both lat/lng and latitude/longitude)
-      const lat = payload.lat || payload.latitude;
-      const lng = payload.lng || payload.longitude;
+      const lat = payload.lat ?? payload.latitude;
+      const lng = payload.lng ?? payload.longitude;
       
-      if (!lat || !lng) {
+      if (lat == null || lng == null) {
         console.error('❌ Invalid GPS data: missing lat/lng', payload);
         return;
       }
@@ -55,17 +60,17 @@ export const startMQTT = () => {
       // Save to database
       const result = await GPSService.saveGPSData({
         device_id: deviceId,
-        lat: lat,
-        lng: lng,
+        lat: Number(lat),
+        lng: Number(lng),
         speed: payload.speed,
         heading: payload.heading,
-        accuracy: payload.accuracy,
-        timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),////undefinedmodified
+        battery: payload.battery,
+        timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),
       });
 
       // Emit real-time update via Socket.IO
-      if (result && result.equipmentId) {
-        emitGPSUpdate(result.equipmentId, result.equipmentName, result.lat, result.lng);
+      if (result && result.gpsId) {
+        emitGPSUpdate(result.gpsId, deviceId, result.lat, result.lng, result.battery);
       }
       
     } catch (error) {

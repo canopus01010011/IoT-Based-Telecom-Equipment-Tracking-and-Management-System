@@ -37,8 +37,11 @@ export default function Techniciens() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    axios.get('/api/technicians', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-      .then(r => setTechs(r.data)).catch(() => setTechs(MOCK))
+    axios.get('/api/users?role=technician', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => setTechs((r.data.users || []).map(u => ({
+        id: u.id, nom: u.full_name || u.nom, telephone: u.phone || u.telephone,
+        specialite: u.specialite || '', statut: u.status || 'Available', missions: u.missions || 0
+      })))).catch(() => setTechs(MOCK))
   }, [])
 
   const displayed = techs.filter(d =>

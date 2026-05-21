@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { io } from 'socket.io-client'
 import axios from 'axios'
 import PageLayout  from '../components/PageLayout'
 import StatCard    from '../components/StatCard'
@@ -6,13 +7,28 @@ import StatusBadge from '../components/StatusBadge'
 import FilterBar   from '../components/FilterBar'
 import { useT }    from '../context/LanguageContext'
 
+const ROUTES_BY_CONTAINER = {
+  'CTR-001': { site: 'OS-Draria', departLat: 36.706559, departLng: 3.167040, destLat: 36.720143, destLng: 2.994913 },
+  'CTR-002': { site: 'OS-Meftah', departLat: 36.706686, departLng: 3.167203, destLat: 36.620460, destLng: 3.222544 },
+  'CTR-003': { site: 'OS-Cheraga', departLat: 36.707079, departLng: 3.166759, destLat: 36.759147, destLng: 2.963507 },
+  'CTR-004': { site: 'OS-BabaHassen', departLat: 36.706533, departLng: 3.166932, destLat: 36.697948, destLng: 2.978671 },
+  'CTR-005': { site: 'OS-Bouzareah', departLat: 36.707094, departLng: 3.166948, destLat: 36.774056, destLng: 3.008713 },
+  'CTR-006': { site: 'OS-Souakria', departLat: 36.706985, departLng: 3.166603, destLat: 36.646844, destLng: 3.206364 },
+  'CTR-007': { site: 'OS-APN', departLat: 36.706682, departLng: 3.167200, destLat: 36.775801, destLng: 3.060468 },
+  'CTR-008': { site: 'OS-HusseinDey', departLat: 36.707028, departLng: 3.167120, destLat: 36.744683, destLng: 3.093389 },
+  'CTR-009': { site: 'OS-Birtouta', departLat: 36.707094, departLng: 3.166945, destLat: 36.648324, destLng: 3.007218 },
+  'CTR-010': { site: 'OS-Sablettes', departLat: 36.707071, departLng: 3.167038, destLat: 36.741059, destLng: 3.124791 },
+}
+
+const routeForContainer = (containerId) => ROUTES_BY_CONTAINER[containerId] || {}
+
 const MOCK = [
-  { id:1, ref:'MSN-091', site:'BTS Bab Ezzouar',  driver:'K. Benali',  technicien:'A. Hamid',   depart:'08:30', duree:'3h 45min', statut:'En Route',  lat:36.7201, lng:3.1634, destLat:36.7372, destLng:3.1897 },
-  { id:2, ref:'MSN-090', site:'Kouba Tower',       driver:'M. Saadi',   technicien:'Y. Brahim',  depart:'09:00', duree:'2h 10min', statut:'On Site',   lat:36.7218, lng:3.0847, destLat:36.7218, destLng:3.0847 },
-  { id:3, ref:'MSN-089', site:'Rouiba Site',       driver:'O. Meziane', technicien:'N. Oukil',   depart:'07:45', duree:'1h 20min', statut:'Incident',  lat:36.7310, lng:3.2841, destLat:36.7310, destLng:3.2841 },
-  { id:4, ref:'MSN-088', site:'Dar El Beida',      driver:'K. Benali',  technicien:'R. Ferhat',  depart:'10:00', duree:'—',        statut:'Pending',   lat:36.6918, lng:3.2156, destLat:36.6918, destLng:3.2156 },
-  { id:5, ref:'MSN-087', site:'Hussein Dey',       driver:'A. Hamid',   technicien:'A. Hamid',   depart:'06:30', duree:'4h 00min', statut:'Completed', lat:36.7456, lng:3.0962, destLat:36.7456, destLng:3.0962 },
-  { id:6, ref:'MSN-086', site:'BTS Hydra',         driver:'M. Saadi',   technicien:'Y. Brahim',  depart:'11:00', duree:'—',        statut:'Cancelled', lat:36.7500, lng:3.0500, destLat:36.7500, destLng:3.0500 },
+  { id:1, ref:'MSN-091', site:'OS-Draria',  driver:'K. Benali',  technicien:'A. Hamid',   depart:'08:30', duree:'3h 45min', statut:'En Route',  lat:36.7499, lng:3.0499, departLat:36.706559, departLng:3.167040, destLat:36.720143, destLng:2.994913, route:'Draria' },
+  { id:2, ref:'MSN-090', site:'OS-Meftah',  driver:'M. Saadi',   technicien:'Y. Brahim',  depart:'09:00', duree:'2h 10min', statut:'En Route',  lat:36.6335, lng:3.1335, departLat:36.706686, departLng:3.167203, destLat:36.620460, destLng:3.222544, route:'Meftah' },
+  { id:3, ref:'MSN-089', site:'OS-Cheraga',  driver:'O. Meziane', technicien:'N. Oukil',   depart:'07:45', duree:'1h 20min', statut:'En Route',  lat:36.7675, lng:2.9598, departLat:36.707079, departLng:3.166759, destLat:36.759147, destLng:2.963507, route:'Cheraga' },
+  { id:4, ref:'MSN-088', site:'OS-BabaHassen',  driver:'K. Benali',  technicien:'Y. Brahim',  depart:'10:00', duree:'2h 30min', statut:'En Route',   lat:36.7055, lng:3.0450, departLat:36.706533, departLng:3.166932, destLat:36.697948, destLng:2.978671, route:'BabaHassen' },
+  { id:5, ref:'MSN-087', site:'OS-Bouzareah',  driver:'M. Saadi',   technicien:'N. Oukil',   depart:'06:30', duree:'1h 50min', statut:'En Route', lat:36.7450, lng:3.0820, departLat:36.707094, departLng:3.166948, destLat:36.774056, destLng:3.008713, route:'Bouzareah' },
+  { id:6, ref:'MSN-086', site:'BTS Bab Ezzouar',  driver:'M. Saadi',   technicien:'Y. Brahim',  depart:'11:00', duree:'—',        statut:'Cancelled', lat:36.7372, lng:3.1897, destLat:36.7372, destLng:3.1897, route:'—' },
 ]
 
 const DOT_COLOR = {
@@ -25,12 +41,20 @@ const CARD_BG = {
   'Completed': 'rgba(148,163,184,.1)', 'Cancelled': 'rgba(148,163,184,.08)',
 }
 
-const STATUS_FILTERS = ['All', 'En Route', 'On Site', 'Pending', 'Incident', 'Completed', 'Cancelled']
+const STATUS_FILTERS = ['All', 'En Route', 'Incident']
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '')
+const SOCKET_URL = (import.meta.env.VITE_SOCKET_URL || API_URL).replace(/\/$/, '')
+
+const latestTrackingPoint = (gpsDevice) => {
+  const points = gpsDevice.TrackingData || gpsDevice.TrackingDataS || gpsDevice.tracking_data || []
+  return Array.isArray(points) ? points[0] : null
+}
 
 function MapModal({ mission, onClose }) {
   const t = useT()
   const mapRef = useRef(null)
   const mapObj = useRef(null)
+  const truckMarker = useRef(null)
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
@@ -41,31 +65,47 @@ function MapModal({ mission, onClose }) {
   useEffect(() => {
     if (!window.L || !mapRef.current) return
     const L = window.L
+    const lat = mission.lat ?? 36.75
+    const lng = mission.lng ?? 3.05
     const map = L.map(mapRef.current, { zoomControl:true, attributionControl:false })
-      .setView([mission.lat, mission.lng], 14)
+      .setView([lat, lng], 13)
     mapObj.current = map
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(map)
 
     const truckIcon = L.divIcon({ className:'', html:`<div style="width:44px;height:44px;background:#1d4ed8;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #60a5fa;font-size:22px;box-shadow:0 0 0 6px rgba(59,130,246,.2);">🚛</div>`, iconSize:[44,44], iconAnchor:[22,22] })
     const siteIcon  = L.divIcon({ className:'', html:`<div style="width:38px;height:38px;background:#0f6e56;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #4ade80;font-size:20px;">📡</div>`,  iconSize:[38,38], iconAnchor:[19,19] })
-    const deptIcon  = L.divIcon({ className:'', html:`<div style="width:30px;height:30px;background:#854f0b;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fbbf24;font-size:16px;">🏭</div>`,    iconSize:[30,30], iconAnchor:[15,15] })
 
-    L.marker([mission.lat, mission.lng], { icon: truckIcon }).addTo(map).bindPopup(`<b>${mission.driver}</b><br/>${t.currentPosition}`)
-    L.marker([mission.destLat, mission.destLng], { icon: siteIcon }).addTo(map).bindPopup(`<b>${mission.site}</b><br/>${t.destination}`)
+    truckMarker.current = L.marker([lat, lng], { icon: truckIcon }).addTo(map).bindPopup(`<b>${mission.driver}</b><br/>${t.currentPosition}`)
+    const departLat = mission.departLat ?? lat
+    const departLng = mission.departLng ?? lng
+    const destLat = mission.destLat ?? lat + 0.02
+    const destLng = mission.destLng ?? lng + 0.02
+
+    L.marker([destLat, destLng], { icon: siteIcon }).addTo(map).bindPopup(`<b>${mission.site}</b><br/>${t.destination}`)
 
     if (mission.statut === 'En Route') {
-      const dLat = mission.destLat - 0.05
-      const dLng = mission.destLng - 0.05
+      const dLat = departLat
+      const dLng = departLng
+      const deptIcon = L.divIcon({ className:'', html:`<div style="width:30px;height:30px;background:#854f0b;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fbbf24;font-size:16px;">🏭</div>`, iconSize:[30,30], iconAnchor:[15,15] })
       L.marker([dLat, dLng], { icon: deptIcon }).addTo(map).bindPopup(t.departurePoint)
-      L.polyline([[dLat, dLng],[mission.lat, mission.lng],[mission.destLat, mission.destLng]], { color:'#3b82f6', weight:3, dashArray:'8 6', opacity:.8 }).addTo(map)
-      map.fitBounds([[dLat,dLng],[mission.destLat,mission.destLng]], { padding:[60,60] })
+      L.polyline([[dLat, dLng],[lat, lng],[destLat, destLng]], { color:'#3b82f6', weight:3, dashArray:'8 6', opacity:.8 }).addTo(map)
+      map.fitBounds([[dLat,dLng],[destLat, destLng]], { padding:[60,60] })
     } else {
-      map.setView([mission.lat, mission.lng], 15)
+      map.setView([lat, lng], 15)
     }
 
     return () => { if (mapObj.current) { mapObj.current.remove(); mapObj.current = null } }
   }, [mission.id])
+
+  // Update truck marker position in real-time
+  useEffect(() => {
+    if (!truckMarker.current || !mapObj.current) return
+    const lat = mission.lat ?? 36.75
+    const lng = mission.lng ?? 3.05
+    truckMarker.current.setLatLng([lat, lng])
+    mapObj.current.panTo([lat, lng])
+  }, [mission.lat, mission.lng])
 
   const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`
 
@@ -91,18 +131,25 @@ function MapModal({ mission, onClose }) {
           </div>
         </div>
         <div ref={mapRef} style={{ width:'100%', height:440 }} />
-        <div style={{ padding:'12px 18px', background:'#0d1426', borderTop:'0.5px solid rgba(59,130,246,.1)', display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+        <div style={{ padding:'12px 18px', background:'#0d1426', borderTop:'0.5px solid rgba(59,130,246,.1)', display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14 }}>
           {[
             { label: t.driver,        value: `🚛 ${mission.driver}` },
             { label: t.departureTime, value: `⏰ ${mission.depart}` },
             { label: t.duration,      value: `⏱ ${mission.duree}`  },
             { label: t.gpsPosition,   value: `📍 ${mission.lat != null ? Number(mission.lat).toFixed(4) : '—'}, ${mission.lng != null ? Number(mission.lng).toFixed(4) : '—'}` },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:3 }}>{label}</p>
-              <p style={{ fontSize:13, color: label === t.gpsPosition ? '#60a5fa' : '#e2e8f0', fontWeight:500 }}>{value}</p>
-            </div>
-          ))}
+            { label: t.battery, value: mission.battery != null ? `${mission.battery}%` : '—', battery: mission.battery },
+          ].map(({ label, value, battery }) => {
+            let batteryColor = '#4ade80'
+            if (battery != null && battery < 20) batteryColor = '#ef4444'
+            else if (battery != null && battery < 60) batteryColor = '#eab308'
+            const isBattery = label === t.battery
+            return (
+              <div key={label}>
+                <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:3 }}>{label}</p>
+                <p style={{ fontSize:13, color: isBattery ? batteryColor : label === t.gpsPosition ? '#60a5fa' : '#e2e8f0', fontWeight:500 }}>{isBattery ? `🔋 ${value}` : value}</p>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
@@ -132,11 +179,100 @@ export default function SuiviMissions() {
   }, [])
 
   useEffect(() => {
-    axios.get('/api/missions/actives', { headers:{ Authorization:`Bearer ${localStorage.getItem('token')}` }})
-      .then(r => setMissions(r.data)).catch(() => setMissions(MOCK))
+    const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
+
+    const loadMissions = (gpsData) => {
+      axios.get('/api/missions', { headers }).then((missionsRes) => {
+        const gpsMap = {}
+        if (gpsData) {
+          gpsData.forEach(g => {
+            const point = latestTrackingPoint(g)
+            gpsMap[g.container_id] = {
+              gpsId: g.id,
+              lat: point?.latitude != null ? parseFloat(point.latitude) : null,
+              lng: point?.longitude != null ? parseFloat(point.longitude) : null,
+              battery: g.battery_level != null ? g.battery_level : null,
+            }
+          })
+        }
+        setMissions(prev => {
+          const prevMap = new Map(prev.map(m => [m.id, m]))
+          return (missionsRes.data.missions || []).map(m => {
+            const existing = prevMap.get(m.id)
+            const gps = gpsMap[m.container_id] || (existing ? { gpsId: existing.gpsId } : {})
+            const route = routeForContainer(m.container_id)
+            const siteLat = m.Site?.latitude ? parseFloat(m.Site.latitude) : null
+            const siteLng = m.Site?.longitude ? parseFloat(m.Site.longitude) : null
+            return {
+              id: m.id, ref: m.id, site: route.site || m.Site?.name || '', driver: m.driver?.full_name || '',
+              technicien: m.technician?.full_name || '', depart: existing?.depart ?? '', duree: existing?.duree ?? '',
+              statut: m.status === 'in-progress' ? 'En Route' : m.status === 'pending' ? 'Pending' : m.status === 'completed' ? 'Completed' : m.status,
+              lat: existing?.lat ?? gps.lat ?? null,
+              lng: existing?.lng ?? gps.lng ?? null,
+              battery: gps.battery ?? existing?.battery ?? null,
+              departLat: route.departLat ?? existing?.departLat ?? null,
+              departLng: route.departLng ?? existing?.departLng ?? null,
+              destLat: route.destLat ?? siteLat,
+              destLng: route.destLng ?? siteLng,
+              container_id: m.container_id, gpsId: gps.gpsId ?? existing?.gpsId ?? null,
+            }
+          })
+        })
+      }).catch(() => setMissions(MOCK))
+    }
+
+    // Load missions with initial GPS positions from DB
+    axios.get('/api/gps/live', { headers }).then(gpsRes => {
+      const gpsData = gpsRes.data?.data || null
+      loadMissions(gpsData)
+    }).catch(() => loadMissions(null))
+
+    // Poll only missions, preserve lat/lng/gpsId from current state
+    const interval = setInterval(() => {
+      axios.get('/api/missions', { headers }).then((missionsRes) => {
+        setMissions(prev => {
+          const prevMap = new Map(prev.map(m => [m.id, m]))
+          return (missionsRes.data.missions || []).map(m => {
+            const existing = prevMap.get(m.id)
+            const route = routeForContainer(m.container_id)
+            const siteLat = m.Site?.latitude ? parseFloat(m.Site.latitude) : null
+            const siteLng = m.Site?.longitude ? parseFloat(m.Site.longitude) : null
+            return {
+              id: m.id, ref: m.id, site: route.site || m.Site?.name || '', driver: m.driver?.full_name || '',
+              technicien: m.technician?.full_name || '', depart: existing?.depart ?? '', duree: existing?.duree ?? '',
+              statut: m.status === 'in-progress' ? 'En Route' : m.status === 'pending' ? 'Pending' : m.status === 'completed' ? 'Completed' : m.status,
+              lat: existing?.lat ?? null, lng: existing?.lng ?? null,
+              battery: existing?.battery ?? null,
+              departLat: route.departLat ?? existing?.departLat ?? null,
+              departLng: route.departLng ?? existing?.departLng ?? null,
+              destLat: route.destLat ?? siteLat,
+              destLng: route.destLng ?? siteLng,
+              container_id: m.container_id, gpsId: existing?.gpsId ?? null,
+            }
+          })
+        })
+      }).catch(() => {})
+    }, 5000)
+
+    // Socket.IO is the ONLY source of GPS position updates
+    const socket = io(SOCKET_URL)
+    socket.emit('join-tracking')
+    socket.on('gps-update', (data) => {
+      setMissions(prev => prev.map(m => {
+        if (m.gpsId === data.equipmentId) {
+          return { ...m, lat: data.latitude, lng: data.longitude, battery: data.battery ?? m.battery }
+        }
+        return m
+      }))
+    })
+
+    return () => { clearInterval(interval); socket.disconnect() }
   }, [])
 
-  const displayed = filtre === 'All' ? missions : missions.filter(m => m.statut === filtre)
+  const displayed = filtre === 'All'
+    ? missions.filter(m => m.statut === 'En Route' || m.statut === 'Incident')
+    : missions.filter(m => m.statut === filtre)
 
   const stats = {
     enRoute:  missions.filter(m => m.statut === 'En Route').length,
@@ -185,7 +321,7 @@ export default function SuiviMissions() {
         ))}
       </div>
 
-      {selected && leaflet && <MapModal mission={selected} onClose={() => setSelected(null)} />}
+      {selected && leaflet && <MapModal mission={missions.find(m => m.id === selected.id) || selected} onClose={() => setSelected(null)} />}
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
     </PageLayout>
   )

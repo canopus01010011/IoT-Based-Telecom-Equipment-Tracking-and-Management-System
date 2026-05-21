@@ -1,5 +1,4 @@
 import paho.mqtt.client as mqtt
-import ssl
 import gpxpy
 import gpxpy.gpx
 import math
@@ -33,7 +32,7 @@ def payload_create(lat, lon, heading, battery):
     return payload
 
 
-def run_device(client, device):
+def run_device(client, device, stop_event):
     points = []
     topic = TOPIC_GPS.format(siteID=device['siteID'], deviceID=device['deviceID'])
     with open(device['gpx_file'], 'r') as f:
@@ -46,29 +45,47 @@ def run_device(client, device):
     last_heading = 0
     battery = 100
     battery_counter = 0
-    for i in range(len(points)):
-        battery_counter += 1
-        if battery_counter == 3:
-            battery -= 1
-            battery_counter = 0
-        if i == len(points) - 1:
-            heading = last_heading
-        else:
-            heading = calculate_heading(points[i][0], points[i][1], points[i+1][0], points[i+1][1])
-            last_heading = heading
-        payload = payload_create(points[i][0], points[i][1], heading, battery)
-        client.publish(topic, json.dumps(payload))
-        sleep(GPS_INTERVAL)
+    try:
+        for i in range(len(points)):
+            if stop_event.is_set():
+                break
+            battery_counter += 1
+            if battery_counter == 3:
+                battery -= 1
+                battery_counter = 0
+            if i == len(points) - 1:
+                heading = last_heading
+            else:
+                heading = calculate_heading(points[i][0], points[i][1], points[i+1][0], points[i+1][1])
+                last_heading = heading
+            payload = payload_create(points[i][0], points[i][1], heading, battery)
+            client.publish(topic, json.dumps(payload))
+            if stop_event.wait(timeout=GPS_INTERVAL):
+                break
+    except Exception as e:
+        print(f"Error in {device['deviceID']}: {e}")
 
 
 if __name__ == "__main__":
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-    client.tls_set(tls_version=ssl.PROTOCOL_TLS)
-    client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+    if MQTT_USERNAME:
+        client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
     client.connect(BROKER_HOST, BROKER_PORT)
     client.loop_start()
     print("Connected to the broker MQTT")
+    print("Press Ctrl+C to stop simulation")
+
+    stop_event = threading.Event()
 
     for device in DEVICES:
-        t = threading.Thread(target=run_device, args=(client, device))
+        t = threading.Thread(target=run_device, args=(client, device, stop_event), daemon=True)
         t.start()
+
+    try:
+        while not stop_event.is_set():
+            stop_event.wait(timeout=1)
+    except KeyboardInterrupt:
+        print("\nStopping simulation...")
+        stop_event.set()
+        client.loop_stop()
+        client.disconnect()

@@ -21,7 +21,7 @@ export class SiteService {
       where,
       limit,
       offset,
-      order: [['created_at', 'DESC']],
+      order: [['site_creation_date', 'DESC']],
     });
     return {
       sites: rows,
