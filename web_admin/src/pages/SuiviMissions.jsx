@@ -13,6 +13,11 @@ const ROUTES_BY_CONTAINER = {
   'CTR-003': { site: 'OS-Cheraga', departLat: 36.707079, departLng: 3.166759, destLat: 36.759147, destLng: 2.963507 },
   'CTR-004': { site: 'OS-BabaHassen', departLat: 36.706533, departLng: 3.166932, destLat: 36.697948, destLng: 2.978671 },
   'CTR-005': { site: 'OS-Bouzareah', departLat: 36.707094, departLng: 3.166948, destLat: 36.774056, destLng: 3.008713 },
+  'CTR-006': { site: 'OS-Souakria', departLat: 36.706985, departLng: 3.166603, destLat: 36.646844, destLng: 3.206364 },
+  'CTR-007': { site: 'OS-APN', departLat: 36.706682, departLng: 3.167200, destLat: 36.775801, destLng: 3.060468 },
+  'CTR-008': { site: 'OS-HusseinDey', departLat: 36.707028, departLng: 3.167120, destLat: 36.744683, destLng: 3.093389 },
+  'CTR-009': { site: 'OS-Birtouta', departLat: 36.707094, departLng: 3.166945, destLat: 36.648324, destLng: 3.007218 },
+  'CTR-010': { site: 'OS-Sablettes', departLat: 36.707071, departLng: 3.167038, destLat: 36.741059, destLng: 3.124791 },
 }
 
 const routeForContainer = (containerId) => ROUTES_BY_CONTAINER[containerId] || {}
