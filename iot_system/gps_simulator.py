@@ -9,8 +9,6 @@ from datetime import datetime, timezone
 from time import sleep
 from config import *
 
-stop_event = threading.Event()
-
 
 def calculate_heading(lat1, lon1, lat2, lon2):
     lat1 = math.radians(lat1)
@@ -36,15 +34,9 @@ def payload_create(lat, lon, heading, battery):
 
 
 def run_device(client, device):
-    import os
     points = []
     topic = TOPIC_GPS.format(siteID=device['siteID'], deviceID=device['deviceID'])
-    
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    gpx_filename = os.path.basename(device['gpx_file'])
-    gpx_path = os.path.join(script_dir, gpx_filename)
-    
-    with open(gpx_path, 'r') as f:
+    with open(device['gpx_file'], 'r') as f:
         gpx = gpxpy.parse(f)
     for track in gpx.tracks:
         for segment in track.segments:
@@ -55,8 +47,6 @@ def run_device(client, device):
     battery = 100
     battery_counter = 0
     for i in range(len(points)):
-        if stop_event.is_set():
-            break
         battery_counter += 1
         if battery_counter == 3:
             battery -= 1
@@ -68,42 +58,17 @@ def run_device(client, device):
             last_heading = heading
         payload = payload_create(points[i][0], points[i][1], heading, battery)
         client.publish(topic, json.dumps(payload))
-        if stop_event.wait(GPS_INTERVAL):
-            break
-
-    print(f"Stopped simulation for {device['deviceID']}")
+        sleep(GPS_INTERVAL)
 
 
 if __name__ == "__main__":
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-    
-    # Enable TLS/SSL only on the standard secure MQTT port.
-    if BROKER_PORT == 8883:
-        client.tls_set(tls_version=ssl.PROTOCOL_TLS)
-        
-    if MQTT_USERNAME and MQTT_PASSWORD:
-        client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
-        
+    client.tls_set(tls_version=ssl.PROTOCOL_TLS)
+    client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
     client.connect(BROKER_HOST, BROKER_PORT)
     client.loop_start()
     print("Connected to the broker MQTT")
 
-    threads = []
-    try:
-        for device in DEVICES:
-            t = threading.Thread(target=run_device, args=(client, device))
-            t.start()
-            threads.append(t)
-
-        print("Simulation running. Press Ctrl+C to stop.")
-        while any(t.is_alive() for t in threads):
-            sleep(0.5)
-    except KeyboardInterrupt:
-        print("\nStopping simulation...")
-        stop_event.set()
-    finally:
-        for t in threads:
-            t.join(timeout=GPS_INTERVAL + 1)
-        client.loop_stop()
-        client.disconnect()
-        print("Simulation stopped.")
+    for device in DEVICES:
+        t = threading.Thread(target=run_device, args=(client, device))
+        t.start()
