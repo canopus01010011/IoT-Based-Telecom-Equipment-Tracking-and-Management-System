@@ -70,7 +70,7 @@ export const startMQTT = () => {
 
       // Emit real-time update via Socket.IO
       if (result && result.gpsId) {
-        emitGPSUpdate(result.gpsId, deviceId, result.lat, result.lng);
+        emitGPSUpdate(result.gpsId, deviceId, result.lat, result.lng, result.battery);
       }
       
     } catch (error) {

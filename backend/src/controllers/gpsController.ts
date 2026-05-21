@@ -40,7 +40,7 @@ export class GPSController {
         return res.status(404).json({ error: `GPS device not found for ${deviceId}` });
       }
 
-      emitGPSUpdate(result.gpsId, String(deviceId), result.lat, result.lng);
+      emitGPSUpdate(result.gpsId, String(deviceId), result.lat, result.lng, result.battery);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);

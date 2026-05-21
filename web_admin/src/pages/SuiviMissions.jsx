@@ -126,18 +126,25 @@ function MapModal({ mission, onClose }) {
           </div>
         </div>
         <div ref={mapRef} style={{ width:'100%', height:440 }} />
-        <div style={{ padding:'12px 18px', background:'#0d1426', borderTop:'0.5px solid rgba(59,130,246,.1)', display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+        <div style={{ padding:'12px 18px', background:'#0d1426', borderTop:'0.5px solid rgba(59,130,246,.1)', display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14 }}>
           {[
             { label: t.driver,        value: `🚛 ${mission.driver}` },
             { label: t.departureTime, value: `⏰ ${mission.depart}` },
             { label: t.duration,      value: `⏱ ${mission.duree}`  },
             { label: t.gpsPosition,   value: `📍 ${mission.lat != null ? Number(mission.lat).toFixed(4) : '—'}, ${mission.lng != null ? Number(mission.lng).toFixed(4) : '—'}` },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:3 }}>{label}</p>
-              <p style={{ fontSize:13, color: label === t.gpsPosition ? '#60a5fa' : '#e2e8f0', fontWeight:500 }}>{value}</p>
-            </div>
-          ))}
+            { label: t.battery, value: mission.battery != null ? `${mission.battery}%` : '—', battery: mission.battery },
+          ].map(({ label, value, battery }) => {
+            let batteryColor = '#4ade80'
+            if (battery != null && battery < 20) batteryColor = '#ef4444'
+            else if (battery != null && battery < 60) batteryColor = '#eab308'
+            const isBattery = label === t.battery
+            return (
+              <div key={label}>
+                <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:3 }}>{label}</p>
+                <p style={{ fontSize:13, color: isBattery ? batteryColor : label === t.gpsPosition ? '#60a5fa' : '#e2e8f0', fontWeight:500 }}>{isBattery ? `🔋 ${value}` : value}</p>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
@@ -180,6 +187,7 @@ export default function SuiviMissions() {
               gpsId: g.id,
               lat: point?.latitude != null ? parseFloat(point.latitude) : null,
               lng: point?.longitude != null ? parseFloat(point.longitude) : null,
+              battery: g.battery_level != null ? g.battery_level : null,
             }
           })
         }
@@ -197,6 +205,7 @@ export default function SuiviMissions() {
               statut: m.status === 'in-progress' ? 'En Route' : m.status === 'pending' ? 'Pending' : m.status === 'completed' ? 'Completed' : m.status,
               lat: existing?.lat ?? gps.lat ?? null,
               lng: existing?.lng ?? gps.lng ?? null,
+              battery: gps.battery ?? existing?.battery ?? null,
               departLat: route.departLat ?? existing?.departLat ?? null,
               departLng: route.departLng ?? existing?.departLng ?? null,
               destLat: route.destLat ?? siteLat,
@@ -229,6 +238,7 @@ export default function SuiviMissions() {
               technicien: m.technician?.full_name || '', depart: existing?.depart ?? '', duree: existing?.duree ?? '',
               statut: m.status === 'in-progress' ? 'En Route' : m.status === 'pending' ? 'Pending' : m.status === 'completed' ? 'Completed' : m.status,
               lat: existing?.lat ?? null, lng: existing?.lng ?? null,
+              battery: existing?.battery ?? null,
               departLat: route.departLat ?? existing?.departLat ?? null,
               departLng: route.departLng ?? existing?.departLng ?? null,
               destLat: route.destLat ?? siteLat,
@@ -246,7 +256,7 @@ export default function SuiviMissions() {
     socket.on('gps-update', (data) => {
       setMissions(prev => prev.map(m => {
         if (m.gpsId === data.equipmentId) {
-          return { ...m, lat: data.latitude, lng: data.longitude }
+          return { ...m, lat: data.latitude, lng: data.longitude, battery: data.battery ?? m.battery }
         }
         return m
       }))
