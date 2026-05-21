@@ -11,6 +11,8 @@ const ROUTES_BY_CONTAINER = {
   'CTR-001': { site: 'OS-Draria', departLat: 36.706559, departLng: 3.167040, destLat: 36.720143, destLng: 2.994913 },
   'CTR-002': { site: 'OS-Meftah', departLat: 36.706686, departLng: 3.167203, destLat: 36.620460, destLng: 3.222544 },
   'CTR-003': { site: 'OS-Cheraga', departLat: 36.707079, departLng: 3.166759, destLat: 36.759147, destLng: 2.963507 },
+  'CTR-004': { site: 'OS-BabaHassen', departLat: 36.706533, departLng: 3.166932, destLat: 36.697948, destLng: 2.978671 },
+  'CTR-005': { site: 'OS-Bouzareah', departLat: 36.707094, departLng: 3.166948, destLat: 36.774056, destLng: 3.008713 },
 }
 
 const routeForContainer = (containerId) => ROUTES_BY_CONTAINER[containerId] || {}
@@ -19,8 +21,8 @@ const MOCK = [
   { id:1, ref:'MSN-091', site:'OS-Draria',  driver:'K. Benali',  technicien:'A. Hamid',   depart:'08:30', duree:'3h 45min', statut:'En Route',  lat:36.7499, lng:3.0499, departLat:36.706559, departLng:3.167040, destLat:36.720143, destLng:2.994913, route:'Draria' },
   { id:2, ref:'MSN-090', site:'OS-Meftah',  driver:'M. Saadi',   technicien:'Y. Brahim',  depart:'09:00', duree:'2h 10min', statut:'En Route',  lat:36.6335, lng:3.1335, departLat:36.706686, departLng:3.167203, destLat:36.620460, destLng:3.222544, route:'Meftah' },
   { id:3, ref:'MSN-089', site:'OS-Cheraga',  driver:'O. Meziane', technicien:'N. Oukil',   depart:'07:45', duree:'1h 20min', statut:'En Route',  lat:36.7675, lng:2.9598, departLat:36.707079, departLng:3.166759, destLat:36.759147, destLng:2.963507, route:'Cheraga' },
-  { id:4, ref:'MSN-088', site:'BTS Bab Ezzouar',  driver:'K. Benali',  technicien:'R. Ferhat',  depart:'10:00', duree:'—',        statut:'Pending',   lat:36.7372, lng:3.1897, destLat:36.7372, destLng:3.1897, route:'—' },
-  { id:5, ref:'MSN-087', site:'BTS Bab Ezzouar',  driver:'A. Hamid',   technicien:'A. Hamid',   depart:'06:30', duree:'4h 00min', statut:'Completed', lat:36.7372, lng:3.1897, destLat:36.7372, destLng:3.1897, route:'—' },
+  { id:4, ref:'MSN-088', site:'OS-BabaHassen',  driver:'K. Benali',  technicien:'Y. Brahim',  depart:'10:00', duree:'2h 30min', statut:'En Route',   lat:36.7055, lng:3.0450, departLat:36.706533, departLng:3.166932, destLat:36.697948, destLng:2.978671, route:'BabaHassen' },
+  { id:5, ref:'MSN-087', site:'OS-Bouzareah',  driver:'M. Saadi',   technicien:'N. Oukil',   depart:'06:30', duree:'1h 50min', statut:'En Route', lat:36.7450, lng:3.0820, departLat:36.707094, departLng:3.166948, destLat:36.774056, destLng:3.008713, route:'Bouzareah' },
   { id:6, ref:'MSN-086', site:'BTS Bab Ezzouar',  driver:'M. Saadi',   technicien:'Y. Brahim',  depart:'11:00', duree:'—',        statut:'Cancelled', lat:36.7372, lng:3.1897, destLat:36.7372, destLng:3.1897, route:'—' },
 ]
 

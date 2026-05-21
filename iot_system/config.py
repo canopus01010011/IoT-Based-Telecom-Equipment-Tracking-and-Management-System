@@ -18,4 +18,6 @@ DEVICES = [
     {'siteID': 'site_alger', 'deviceID': 'package_001', 'route': 'OS-Draria', 'gpx_file': 'roads/OS_Draria.gpx'},
     {'siteID': 'site_alger', 'deviceID': 'package_002', 'route': 'OS-Meftah', 'gpx_file': 'roads/OS_Meftah.gpx'},
     {'siteID': 'site_alger', 'deviceID': 'package_003', 'route': 'OS-Cheraga', 'gpx_file': 'roads/OS_Cheraga.gpx'},
+    {'siteID': 'site_alger', 'deviceID': 'package_004', 'route': 'OS-BabaHassen', 'gpx_file': 'roads/OS_BabaHassen.gpx'},
+    {'siteID': 'site_alger', 'deviceID': 'package_005', 'route': 'OS-Bouzareah', 'gpx_file': 'roads/OS_Bouzareah.gpx'},
 ]
