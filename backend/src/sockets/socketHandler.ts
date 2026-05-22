@@ -58,3 +58,8 @@ export const emitNotification = (notification: {
   if (!io) return;
   io.emit('notification', notification);
 };
+
+export const emitMissionUpdate = (missionId: string, status: string, previousStatus: string) => {
+  if (!io) return;
+  io.emit('mission:update', { missionId, status, previousStatus });
+};

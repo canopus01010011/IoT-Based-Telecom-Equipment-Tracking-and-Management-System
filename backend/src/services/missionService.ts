@@ -1,6 +1,7 @@
 import { Op } from 'sequelize';
 import { Mission, Report, Site, User, MissionFile } from '../models/index.js';
 import { NotificationService } from './notificationService.js';
+import { emitMissionUpdate } from '../sockets/socketHandler.js';
 
 const normalizeMissionPayload = (data: any) => ({
   status: data.status || 'pending',
@@ -113,6 +114,7 @@ export class MissionService {
       throw new Error(`Invalid status transition from ${mission.status} to ${status}`);
     }
 
+    const previousStatus = mission.status;
     const updates: any = { status };
     if (status === 'in-progress') updates.start_date = new Date();
     if (status === 'completed') updates.end_date = new Date();
@@ -133,6 +135,9 @@ export class MissionService {
       }
     }
 
+    // Broadcast real-time status update via socket
+    emitMissionUpdate(id, status, previousStatus);
+
     // Fire notifications
     const reloaded = await Mission.findByPk(id, {
       include: [
@@ -149,7 +154,7 @@ export class MissionService {
 
     if (status === 'in-progress') {
       const body = `${driverName} · ${reloaded?.container_id || ''} · ${siteName} · ${id}`;
-      NotificationService.send(
+      await NotificationService.send(
         [...new Set([...adminIds, mission.technician_id, mission.driver_id].filter(Boolean))],
         'departure',
         body,
@@ -157,23 +162,23 @@ export class MissionService {
       );
     } else if (status === 'completed') {
       const body = `${techName || driverName} · ${siteName} · ${id}`;
-      NotificationService.send(
+      await NotificationService.send(
         [...new Set([...adminIds, mission.technician_id, mission.driver_id].filter(Boolean))],
         'completed',
         body,
         { missionId: id },
       );
-    } else if (status === 'pending' && mission.status === 'completed') {
+    } else if (status === 'pending' && previousStatus === 'completed') {
       const body = `Report rejected — ${notes || 'No comments'} · ${siteName} · ${id}`;
-      NotificationService.send(
+      await NotificationService.send(
         [...new Set([mission.technician_id, mission.driver_id].filter(Boolean))],
-        'report_rejected',
+        'Report Rejected',
         body,
         { missionId: id },
       );
-      NotificationService.send(
+      await NotificationService.send(
         adminIds,
-        'report_rejected',
+        'Report Rejected',
         `Report rejected by admin · ${siteName} · ${id}`,
         { missionId: id },
       );
