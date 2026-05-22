@@ -141,7 +141,7 @@ export class UploadController {
   static async uploadMultiplePhotos(req: Request, res: Response, next: NextFunction) {
     try {
       const files = req.files as Express.Multer.File[];
-      const { missionId } = req.body;
+      const { missionId, description, notes } = req.body;
 
       if (!files || files.length === 0) {
         return res.status(400).json({ error: 'No photos uploaded' });
@@ -174,9 +174,15 @@ export class UploadController {
             delivery_photo_url: [],
           },
         });
-        await report.update({
-          delivery_photo_url: [...report.delivery_photo_url, ...uploads.map(upload => upload.url)],
-        });
+        const update: Record<string, unknown> = {
+          delivery_photo_url: [
+            ...report.delivery_photo_url,
+            ...uploads.map((upload) => upload.url),
+          ],
+        };
+        if (description) update.description = String(description);
+        if (notes) update.notes = String(notes);
+        await report.update(update);
       }
 
       res.json({

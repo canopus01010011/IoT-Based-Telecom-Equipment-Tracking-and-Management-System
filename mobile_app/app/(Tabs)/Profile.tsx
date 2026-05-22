@@ -1,6 +1,9 @@
 import { Gear } from "@/components/UI/Gear";
+import { LanguageSelector } from "@/components/UI/LanguageSelector";
 import { colors } from "@/constants/theme";
+import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useMissions } from "@/hooks/useMissions";
 import { useRouter } from "expo-router";
 import {
   Bell,
@@ -26,18 +29,20 @@ const { width, height } = Dimensions.get("window");
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t, isRTL } = useLanguage();
   const { user, logout } = useAuth();
+  const { missions, completedMissions } = useMissions();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const handleLogout = () => {
-    logout();
-    router.replace("/");
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/login");
   };
   if (!user) {
     return (
       <View style={styles.center}>
-        <Text style={styles.text}>You are not signed in yet.</Text>
+        <Text style={styles.text}>{t("profile.notSignedIn")}</Text>
         <Pressable style={styles.button} onPress={() => router.push("/login")}>
-          <Text style={styles.buttonText}>Go to Login</Text>
+          <Text style={styles.buttonText}>{t("profile.goLogin")}</Text>
         </Pressable>
       </View>
     );
@@ -69,7 +74,7 @@ export default function ProfileScreen() {
           <User size={40} color={colors.primary} />
         </View>
 
-        <Text style={styles.name}>{user.name}</Text>
+        <Text style={styles.name}>{user.full_name}</Text>
         <Text style={styles.role}>{user.role}</Text>
 
 
@@ -87,23 +92,25 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.statsRow}>
-        <StatCard label="Missions" value="3" />
-        <StatCard label="Completed" value="15" />
+        <StatCard label={t("profile.missions")} value={String(missions.length)} />
+        <StatCard label={t("profile.completed")} value={String(completedMissions.length)} />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings</Text>
+        <Text style={[styles.sectionTitle, isRTL && styles.rtlText]}>{t("profile.settings")}</Text>
+
+        <LanguageSelector />
 
         <MenuItem
           icon={<Settings size={18} />}
-          label="Account Settings"
+          label={t("profile.account")}
           onPress={() => router.push("/screens/account-settings")}
         />
 
         <View style={styles.menuItem}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Bell size={18} />
-            <Text style={styles.menuText}>Notifications</Text>
+            <Text style={styles.menuText}>{t("profile.notifications")}</Text>
           </View>
 
           <Switch
@@ -116,14 +123,14 @@ export default function ProfileScreen() {
 
         <MenuItem
           icon={<User size={18} />}
-          label="Help & Support"
+          label={t("profile.help")}
           onPress={() => router.push("/screens/help-support")}
         />
       </View>
 
       <Pressable style={styles.logoutBtn} onPress={handleLogout}>
         <LogOut size={18} color="white" />
-        <Text style={styles.logoutText}>Logout</Text>
+        <Text style={styles.logoutText}>{t("profile.logout")}</Text>
       </Pressable>
     </ScrollView>
   );
@@ -328,5 +335,8 @@ const styles = StyleSheet.create({
   logoutText: {
     color: "white",
     fontWeight: "700",
+  },
+  rtlText: {
+    textAlign: "right",
   },
 });

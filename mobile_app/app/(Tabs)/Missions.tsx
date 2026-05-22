@@ -1,9 +1,13 @@
 import MissionCard from "@/components/UI/MissionCard";
 import { colors } from "@/constants/theme";
+import { useLanguage } from "@/context/LanguageContext";
+import { useOffline } from "@/context/OfflineContext";
 import { useMissions } from "@/hooks/useMissions";
+import type { MissionCardData } from "@/app/utils/missionMapper";
 import { Search } from "lucide-react-native";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,27 +17,42 @@ import {
 } from "react-native";
 
 export default function MissionsScreen() {
-  const { missions } = useMissions();
-
+  const { missions, loading, isFromCache } = useMissions();
+  const { isOnline } = useOffline();
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
   const filtered = missions.filter((m) => {
+    const query = search.toLowerCase();
     const matchSearch =
-      m.site.toLowerCase().includes(search.toLowerCase()) ||
-      m.company.toLowerCase().includes(search.toLowerCase());
+      m.site.toLowerCase().includes(query) ||
+      m.company.toLowerCase().includes(query) ||
+      m.address.toLowerCase().includes(query);
 
     const matchFilter =
       filter === "All" ||
       (filter === "Today" && m.date === "today") ||
-      (filter === "Completed" && m.status === "Completed") ||
-      (filter === "Pending" && m.status === "Pending");
+      (filter === "Completed" && m.statusRaw === "completed") ||
+      (filter === "Pending" && m.statusRaw === "pending");
 
     return matchSearch && matchFilter;
   });
 
   const today = filtered.filter((m) => m.date === "today");
-  const completed = filtered.filter((m) => m.status === "Completed");
+  const others = filtered.filter((m) => m.date !== "today");
+
+  const renderSection = (title: string, items: MissionCardData[]) => {
+    if (items.length === 0) return null;
+    return (
+      <>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {items.map((m) => (
+          <MissionCard key={m.id} mission={m} />
+        ))}
+      </>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -41,13 +60,19 @@ export default function MissionsScreen() {
         <View style={styles.searchBox}>
           <Search size={18} color="#9ca3af" />
           <TextInput
-            placeholder="Search missions..."
+            placeholder={t("missions.search")}
             placeholderTextColor="#6b7280"
             style={styles.input}
             value={search}
             onChangeText={setSearch}
           />
         </View>
+
+        {(isFromCache || !isOnline) && !loading ? (
+          <Text style={styles.cacheHint}>
+            {isFromCache ? t("offline.cachedData") : t("offline.banner")}
+          </Text>
+        ) : null}
 
         <View style={styles.filters}>
           {["All", "Today", "Completed", "Pending"].map((f) => (
@@ -59,27 +84,31 @@ export default function MissionsScreen() {
               <Text
                 style={[styles.filterText, filter === f && { color: "white" }]}
               >
-                {f}
+                {{
+                  All: t("missions.all"),
+                  Today: t("missions.today"),
+                  Completed: t("missions.completed"),
+                  Pending: t("missions.pending"),
+                }[f]}
               </Text>
             </Pressable>
           ))}
         </View>
 
-        {today.length > 0 && (
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : filtered.length === 0 ? (
+          <Text style={styles.empty}>
+            {!isOnline && missions.length === 0
+              ? t("missions.offlineEmpty")
+              : t("missions.empty")}
+          </Text>
+        ) : (
           <>
-            <Text style={styles.sectionTitle}>Today</Text>
-            {today.map((m) => (
-              <MissionCard key={m.id} mission={m} />
-            ))}
-          </>
-        )}
-
-        {completed.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Completed</Text>
-            {completed.map((m) => (
-              <MissionCard key={m.id} mission={m} />
-            ))}
+            {renderSection(t("missions.today"), today)}
+            {renderSection(t("missions.upcoming"), others)}
           </>
         )}
       </ScrollView>
@@ -93,7 +122,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     padding: 20,
   },
-
+  center: {
+    marginTop: 40,
+    alignItems: "center",
+  },
+  empty: {
+    color: "#9ca3af",
+    textAlign: "center",
+    marginTop: 40,
+  },
+  cacheHint: {
+    color: "#fbbf24",
+    fontSize: 12,
+    marginTop: 10,
+    marginBottom: 4,
+  },
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -104,74 +147,33 @@ const styles = StyleSheet.create({
     borderColor: "#1f2937",
     gap: 8,
   },
-
   input: {
     color: "white",
     flex: 1,
   },
-
   filters: {
     flexDirection: "row",
     marginTop: 12,
     gap: 8,
+    flexWrap: "wrap",
   },
-
   filterBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
     backgroundColor: "#1f2937",
   },
-
   activeFilter: {
     backgroundColor: colors.primary,
   },
-
   filterText: {
     color: "#9ca3af",
     fontSize: 12,
   },
-
   sectionTitle: {
     color: "white",
     fontWeight: "700",
     marginTop: 20,
     marginBottom: 10,
-  },
-
-  card: {
-    backgroundColor: "#111827",
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#1f2937",
-    marginBottom: 12,
-  },
-
-  site: {
-    color: "white",
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-  },
-
-  text: {
-    color: "#9ca3af",
-    fontSize: 12,
-  },
-
-  bottom: {
-    marginTop: 10,
-    alignItems: "flex-end",
-  },
-
-  status: {
-    fontWeight: "700",
   },
 });

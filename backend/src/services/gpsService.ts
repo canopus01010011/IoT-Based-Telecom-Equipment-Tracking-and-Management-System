@@ -84,4 +84,32 @@ export class GPSService {
       ],
     });
   }
+
+  static async getContainerLiveLocation(containerId: string) {
+    return GPSDevice.findOne({
+      where: { container_id: containerId },
+      attributes: ['id', 'container_id', 'device_serial_number', 'battery_level', 'device_status'],
+      include: [
+        {
+          model: TrackingData,
+          separate: true,
+          limit: 1,
+          order: [['timestamp', 'DESC']],
+        },
+      ],
+    });
+  }
+
+  static async getContainerHistory(containerId: string, limit: number = 300) {
+    const gpsDevice = await GPSDevice.findOne({
+      where: { container_id: containerId },
+      attributes: ['id'],
+    });
+    if (!gpsDevice) return [];
+    return TrackingData.findAll({
+      where: { gps_id: gpsDevice.id },
+      order: [['timestamp', 'DESC']],
+      limit,
+    });
+  }
 }

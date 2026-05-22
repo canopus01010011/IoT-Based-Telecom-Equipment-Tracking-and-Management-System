@@ -1,4 +1,5 @@
-import { Confirmation, Mission, Report, User } from '../models/index.js';
+import { Op } from 'sequelize';
+import { Confirmation, Container, Mission, Report, User } from '../models/index.js';
 
 interface ScanData {
   missionId: string;
@@ -7,6 +8,44 @@ interface ScanData {
 }
 
 export class DeliveryService {
+  static async resolveMissionIdFromQr(
+    qrCode: string,
+    userId: string,
+    userRole: string,
+  ): Promise<string> {
+    const container = await Container.findOne({
+      where: {
+        [Op.or]: [{ qr_code: qrCode }, { id: qrCode }],
+      },
+    });
+
+    if (!container) {
+      throw new Error('Invalid QR code: container not found');
+    }
+
+    const missionWhere: Record<string, unknown> = {
+      container_id: container.id,
+      status: { [Op.ne]: 'completed' },
+    };
+
+    if (userRole === 'driver') {
+      missionWhere.driver_id = userId;
+    } else if (userRole === 'technician') {
+      missionWhere.technician_id = userId;
+    }
+
+    const mission = await Mission.findOne({
+      where: missionWhere,
+      order: [['scheduled_start_date', 'DESC']],
+    });
+
+    if (!mission) {
+      throw new Error('Invalid QR code: no active mission for this container');
+    }
+
+    return mission.id;
+  }
+
   static async processScan(data: ScanData) {
     const { missionId, userId, userRole } = data;
 
@@ -57,6 +96,7 @@ export class DeliveryService {
 
     return {
       success: true,
+      missionId: mission.id,
       message: 'Driver confirmation recorded. Waiting for technician confirmation.',
       status: mission.status,
       nextStep: 'technician_confirmation_required',
@@ -94,6 +134,7 @@ export class DeliveryService {
 
     return {
       success: true,
+      missionId: mission.id,
       message: 'Mission confirmed successfully.',
       status: mission.status,
       completedAt: mission.end_date,

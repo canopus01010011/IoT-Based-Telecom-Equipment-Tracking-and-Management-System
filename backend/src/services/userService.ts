@@ -1,13 +1,13 @@
 import { User } from '../models/index.js';
-import bcrypt from 'bcrypt';
 import { Op } from 'sequelize';
 
 export class UserService {
   static async createUser(data: any) {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const { password, ...rest } = data;
+    // Plain password — User model beforeCreate hook hashes once (same as /auth/register).
     const user = await User.create({
-      ...data,
-      password_hash: hashedPassword,
+      ...rest,
+      password_hash: password,
     });
     const { password_hash, ...userWithoutPassword } = user.toJSON();
     return userWithoutPassword;
@@ -52,7 +52,7 @@ export class UserService {
     const user = await User.findByPk(id);
     if (!user) throw new Error('User not found');
     if (data.password) {
-      data.password_hash = await bcrypt.hash(data.password, 10);
+      data.password_hash = data.password;
       delete data.password;
     }
     await user.update(data);

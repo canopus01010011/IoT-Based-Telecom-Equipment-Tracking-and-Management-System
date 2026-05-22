@@ -77,4 +77,28 @@ export class GPSController {
       next(error);
     }
   }
+
+  static async getContainerLiveLocation(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { containerId } = req.params;
+      const device = await GPSService.getContainerLiveLocation(containerId as string);
+      if (!device) {
+        return res.status(404).json({ error: 'GPS device not found for this container' });
+      }
+      res.json({ success: true, data: device });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getContainerHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { containerId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 300;
+      const history = await GPSService.getContainerHistory(containerId as string, limit);
+      res.json({ success: true, count: history.length, data: history });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
