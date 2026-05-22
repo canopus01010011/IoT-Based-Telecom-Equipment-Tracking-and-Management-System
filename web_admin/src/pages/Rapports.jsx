@@ -32,11 +32,9 @@ export default function Rapports() {
     axios.get('/api/reports/missions?limit=0', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       .then(r => setRapports((r.data.missions || []).map(m => ({
         id: m.id, reference: m.id, site: m.Site?.name || '',
-        gps: m.Site?.latitude && m.Site?.longitude ? `${m.Site.latitude}, ${m.Site.longitude}` : '',
-        date: m.scheduled_start_date ? m.scheduled_start_date.split('T')[0] : '',
-        heureDebut: m.start_date ? new Date(m.start_date).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '',
-        heureFin: m.end_date ? new Date(m.end_date).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '',
-        statut: m.status,
+        gps: m.gps_coordinates || '', date: m.scheduled_start_date ? m.scheduled_start_date.split('T')[0] : '',
+        heureDebut: '', heureFin: '',
+        statut: m.status === 'completed' ? 'Approved' : m.status === 'in-progress' ? 'Pending' : m.status,
         technicien: { nom: m.technician?.full_name || m.driver?.full_name || '', telephone: m.technician?.phone || m.driver?.phone || '' }
       })))).catch(() => setRapports(MOCK))
   }, [])
