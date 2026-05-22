@@ -9,15 +9,16 @@ import {
   View,
 } from "react-native";
 import MapView, { Marker, Polyline, Region } from "react-native-maps";
-import MapViewDirections from "react-native-maps-directions";
 import * as Linking from "expo-linking";
 
-import { GOOGLE_API_KEY } from "@/constants/config";
+import RoadDirections from "@/components/map/RoadDirections";
+import { HAS_GOOGLE_DIRECTIONS } from "@/constants/config";
 import { WAREHOUSE } from "@/constants/warehouse";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "@/hooks/useLocation";
 import { useLiveGps } from "@/hooks/useLiveGps";
 import { useMissions } from "@/hooks/useMissions";
+import { resolveRouteName, sliceRouteFromPosition } from "@/utils/routeUtils";
 
 const { width, height } = Dimensions.get("window");
 
@@ -35,6 +36,8 @@ export default function MapScreen() {
       (activeMission.raw as Record<string, any>).site)
     : null;
 
+  const routeName = resolveRouteName(site as Record<string, unknown> | null);
+
   const {
     latitude: iotLat,
     longitude: iotLng,
@@ -43,7 +46,7 @@ export default function MapScreen() {
     serial: iotSerial,
     trackPoints,
     plannedRoute,
-  } = useLiveGps(containerId, site?.route);
+  } = useLiveGps(containerId, routeName);
 
   const [distance, setDistance] = useState("");
   const [duration, setDuration] = useState("");
@@ -87,11 +90,13 @@ export default function MapScreen() {
       ? (activeMission?.raw as Record<string, any>)?.technician?.phone
       : (activeMission?.raw as Record<string, any>)?.driver?.phone;
 
-  const showDirections =
-    !!destination &&
-    !!location &&
-    GOOGLE_API_KEY &&
-    GOOGLE_API_KEY !== "YOUR_GOOGLE_API_KEY";
+  const useGpxRoute = plannedRoute.length > 1;
+  const remainingGpxRoute =
+    iotCoordinate && useGpxRoute
+      ? sliceRouteFromPosition(plannedRoute, iotCoordinate)
+      : [];
+
+  const showEta = !!destination && (HAS_GOOGLE_DIRECTIONS || useGpxRoute);
 
   useEffect(() => {
     if (!destination) return;
@@ -174,57 +179,69 @@ export default function MapScreen() {
           </Marker>
         )}
 
-        {/* Planned route (complete path from start to destination) */}
-        {plannedRoute.length > 0 && (
+        {/* Full planned route — GPX track from backend or Google driving directions */}
+        {useGpxRoute ? (
           <Polyline
             coordinates={plannedRoute}
             strokeColor="#6b7280"
-            strokeWidth={3}
-            lineDashPattern={[5, 5]}
+            strokeWidth={4}
           />
+        ) : (
+          destination && (
+            <RoadDirections
+              origin={warehouse}
+              destination={destination}
+              strokeColor="#6b7280"
+              strokeWidth={4}
+              onReady={(km, min) => {
+                if (!iotCoordinate) {
+                  setDistance(km.toFixed(1) + " km");
+                  setDuration(min + " min");
+                }
+              }}
+            />
+          )
         )}
 
-        {/* Already traveled path (blue) */}
-        {trailCoordinates.length > 0 && (
+        {/* Traveled path — GPS history trail or road segment warehouse → container */}
+        {trailCoordinates.length > 1 ? (
           <Polyline
             coordinates={[warehouse, ...trailCoordinates]}
             strokeColor="#3b82f6"
             strokeWidth={5}
           />
+        ) : (
+          iotCoordinate && (
+            <RoadDirections
+              origin={warehouse}
+              destination={iotCoordinate}
+              strokeColor="#3b82f6"
+              strokeWidth={5}
+            />
+          )
         )}
 
-        {/* Remaining path to destination (orange) */}
-        {iotCoordinate && trailCoordinates.length > 0 && (
-          <Polyline
-            coordinates={[iotCoordinate, destination]}
-            strokeColor="#f97316"
-            strokeWidth={5}
-          />
-        )}
-
-        {/* No IoT position yet - show planned route */}
-        {!iotCoordinate && trailCoordinates.length === 0 && plannedRoute.length === 0 && (
-          <Polyline
-            coordinates={[warehouse, destination]}
-            strokeColor="#6b7280"
-            strokeWidth={3}
-            lineDashPattern={[5, 5]}
-          />
-        )}
-
-        {showDirections && (
-          <MapViewDirections
-            origin={location!}
-            destination={destination}
-            apikey={GOOGLE_API_KEY}
-            strokeWidth={4}
-            strokeColor="#3b82f6"
-            onReady={(result) => {
-              setDistance(result.distance.toFixed(1) + " km");
-              setDuration(Math.ceil(result.duration) + " min");
-            }}
-          />
-        )}
+        {/* Remaining path — slice GPX from current position or Google directions */}
+        {iotCoordinate &&
+          destination &&
+          (remainingGpxRoute.length > 1 ? (
+            <Polyline
+              coordinates={remainingGpxRoute}
+              strokeColor="#f97316"
+              strokeWidth={5}
+            />
+          ) : (
+            <RoadDirections
+              origin={iotCoordinate}
+              destination={destination}
+              strokeColor="#f97316"
+              strokeWidth={5}
+              onReady={(km, min) => {
+                setDistance(km.toFixed(1) + " km");
+                setDuration(min + " min");
+              }}
+            />
+          ))}
       </MapView>
 
       <View style={styles.card}>
@@ -243,11 +260,11 @@ export default function MapScreen() {
           </Text>
         ) : null}
 
-        {showDirections && (
+        {showEta && (distance || duration) ? (
           <Text style={styles.info}>
-            📍 Distance: {distance || "..."} • ⏱ {duration || "..."}
+            📍 Remaining: {distance || "..."} • ⏱ {duration || "..."}
           </Text>
-        )}
+        ) : null}
 
         {contactPhone ? (
           <Pressable

@@ -3,7 +3,27 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROUTES_DIR = path.join(__dirname, '../../..', 'iot_system');
+
+function resolveRoutesDir(): string {
+  if (process.env.IOT_ROUTES_DIR) {
+    return process.env.IOT_ROUTES_DIR;
+  }
+
+  const candidates = [
+    path.join(__dirname, '../../..', 'iot_system'),
+    path.join(__dirname, '../../iot_system'),
+    path.join(process.cwd(), 'iot_system'),
+    path.join(process.cwd(), '..', 'iot_system'),
+  ];
+
+  for (const dir of candidates) {
+    if (fs.existsSync(dir)) return dir;
+  }
+
+  return candidates[0];
+}
+
+const ROUTES_DIR = resolveRoutesDir();
 
 export interface RouteWaypoint {
   latitude: number;
@@ -25,9 +45,30 @@ const ROUTE_MAPPING: Record<string, string> = {
 };
 
 /**
- * Parse GPX file and extract waypoints
+ * Load route waypoints: IoT Railway service first, then local GPX files.
  */
-export function parseGPXFile(routeName: string): RouteWaypoint[] {
+export async function getRouteWaypoints(routeName: string): Promise<RouteWaypoint[]> {
+  const iotBase = process.env.IOT_SERVICE_URL?.replace(/\/$/, '');
+  if (iotBase) {
+    try {
+      const url = `${iotBase}/routes/${encodeURIComponent(routeName)}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      if (res.ok) {
+        const data = (await res.json()) as { waypoints?: RouteWaypoint[] };
+        if (data.waypoints?.length) return data.waypoints;
+      }
+      console.warn(`IoT service returned ${res.status} for route ${routeName}`);
+    } catch (error) {
+      console.warn(`IoT service unreachable (${iotBase}), using local GPX:`, error);
+    }
+  }
+  return parseGPXFileLocal(routeName);
+}
+
+/**
+ * Parse GPX file from disk (local / monorepo deploy).
+ */
+export function parseGPXFileLocal(routeName: string): RouteWaypoint[] {
   try {
     const gpxFileName = ROUTE_MAPPING[routeName];
     if (!gpxFileName) {
@@ -50,9 +91,12 @@ export function parseGPXFile(routeName: string): RouteWaypoint[] {
     let match;
 
     while ((match = trkptRegex.exec(gpxContent)) !== null) {
+      const lat = match[1];
+      const lon = match[2];
+      if (!lat || !lon) continue;
       waypoints.push({
-        latitude: parseFloat(match[1]),
-        longitude: parseFloat(match[2]),
+        latitude: parseFloat(lat),
+        longitude: parseFloat(lon),
       });
     }
 
@@ -66,6 +110,11 @@ export function parseGPXFile(routeName: string): RouteWaypoint[] {
 /**
  * Get all available routes
  */
+/** @deprecated Use getRouteWaypoints — kept for callers expecting sync local parse */
+export function parseGPXFile(routeName: string): RouteWaypoint[] {
+  return parseGPXFileLocal(routeName);
+}
+
 export function getAvailableRoutes(): string[] {
   return Object.keys(ROUTE_MAPPING);
 }

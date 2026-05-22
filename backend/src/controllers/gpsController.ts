@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { GPSService } from '../services/gpsService.js';
 import { emitGPSUpdate } from '../sockets/socketHandler.js';
-import { parseGPXFile } from '../utils/gpxParser.js';
+import { getRouteWaypoints } from '../utils/gpxParser.js';
 
 export class GPSController {
   static async ingestIoTGPS(req: Request, res: Response, next: NextFunction) {
@@ -110,7 +110,7 @@ export class GPSController {
         return res.status(400).json({ error: 'Route name is required' });
       }
 
-      const waypoints = parseGPXFile(routeName as string);
+      const waypoints = await getRouteWaypoints(routeName as string);
       if (waypoints.length === 0) {
         return res.status(404).json({ error: `Route not found: ${routeName}` });
       }
