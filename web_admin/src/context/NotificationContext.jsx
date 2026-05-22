@@ -5,15 +5,16 @@ import { io } from 'socket.io-client'
 const NotificationContext = createContext(null)
 
 export const NOTIF_CONFIG = {
-  departure:   { label: 'Departed for route',        color: '#3b82f6',  bg: 'rgba(59,130,246,.12)',  icon: 'truck'    },
-  arrival:     { label: 'Arrived on site',            color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'map-pin'  },
-  incident:    { label: 'Incident reported',          color: '#f87171',  bg: 'rgba(239,68,68,.12)',   icon: 'alert'    },
-  completed:   { label: 'Mission completed',          color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'check'    },
-  report:      { label: 'Field report submitted',     color: '#a78bfa',  bg: 'rgba(167,139,250,.1)',  icon: 'file'     },
-  work_start:  { label: 'Intervention started',       color: '#fbbf24',  bg: 'rgba(251,191,36,.1)',   icon: 'wrench'   },
-  work_done:   { label: 'Intervention completed',     color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'wrench'   },
-  unavailable: { label: 'Marked unavailable',         color: '#94a3b8',  bg: 'rgba(148,163,184,.1)',  icon: 'user-off' },
-  available:   { label: 'Now available',              color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'user-ok'  },
+  departure:      { label: 'Departed for route',        color: '#3b82f6',  bg: 'rgba(59,130,246,.12)',  icon: 'truck'    },
+  arrival:        { label: 'Arrived on site',            color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'map-pin'  },
+  incident:       { label: 'Incident reported',          color: '#f87171',  bg: 'rgba(239,68,68,.12)',   icon: 'alert'    },
+  completed:      { label: 'Mission completed',          color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'check'    },
+  report:         { label: 'Field report submitted',     color: '#a78bfa',  bg: 'rgba(167,139,250,.1)',  icon: 'file'     },
+  report_rejected:{ label: 'Report rejected',            color: '#f87171',  bg: 'rgba(239,68,68,.12)',   icon: 'alert'    },
+  work_start:     { label: 'Intervention started',       color: '#fbbf24',  bg: 'rgba(251,191,36,.1)',   icon: 'wrench'   },
+  work_done:      { label: 'Intervention completed',     color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'wrench'   },
+  unavailable:    { label: 'Marked unavailable',         color: '#94a3b8',  bg: 'rgba(148,163,184,.1)',  icon: 'user-off' },
+  available:      { label: 'Now available',              color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'user-ok'  },
 }
 
 const DEFAULT_CFG = { label: 'Notification', color: '#60a5fa', bg: 'rgba(59,130,246,.08)', icon: 'bell' }
@@ -31,6 +32,7 @@ function parseNotifBody(body) {
 
 function guessType(title) {
   const t = (title || '').toLowerCase()
+  if (t.includes('rejected')) return 'report_rejected'
   if (t.includes('depart') || t.includes('route')) return 'departure'
   if (t.includes('arriv')) return 'arrival'
   if (t.includes('incident')) return 'incident'

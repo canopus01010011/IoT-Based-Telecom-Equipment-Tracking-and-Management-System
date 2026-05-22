@@ -135,9 +135,12 @@ export default function RapportDetail() {
         <FormCard title={t.sitePhotos}>
           <div className="grid grid-cols-3 gap-3">
             {rapport.photos.map((url, i) => (
-              <div key={i} style={{ background:'#0d1426', border:'0.5px solid rgba(59,130,246,.15)', borderRadius:8, height:80, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'rgba(148,163,184,.4)', overflow:'hidden' }}>
-                {url ? <img src={url} alt={`Photo ${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : `📷 Photo ${i+1}`}
-              </div>
+              <a key={i} href={url} target="_blank" rel="noopener noreferrer" style={{ display:'block' }}>
+                <div style={{ background:'#0d1426', border:'0.5px solid rgba(59,130,246,.15)', borderRadius:8, height:80, overflow:'hidden', cursor:'pointer' }}>
+                  <img src={url} alt={`Photo ${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                    onError={e => { e.target.style.display='none'; e.target.parentElement.style.display='flex'; e.target.parentElement.style.alignItems='center'; e.target.parentElement.style.justifyContent='center'; e.target.parentElement.innerHTML='📷'; e.target.parentElement.style.fontSize='20px' }} />
+                </div>
+              </a>
             ))}
           </div>
         </FormCard>

@@ -121,11 +121,16 @@ export class MissionService {
 
     // Save admin notes if provided
     if (notes) {
-      const [report] = await Report.findOrCreate({
-        where: { mission_id: id },
-        defaults: { mission_id: id, description: '', notes },
-      });
-      if (report) await report.update({ notes });
+      try {
+        const existing = await Report.findOne({ where: { mission_id: id } });
+        if (existing) {
+          await existing.update({ notes });
+        } else {
+          await Report.create({ mission_id: id, description: '', notes });
+        }
+      } catch (err: any) {
+        console.error('Failed to save report notes:', err.message);
+      }
     }
 
     // Fire notifications
@@ -156,6 +161,20 @@ export class MissionService {
         [...new Set([...adminIds, mission.technician_id, mission.driver_id].filter(Boolean))],
         'completed',
         body,
+        { missionId: id },
+      );
+    } else if (status === 'pending' && mission.status === 'completed') {
+      const body = `Report rejected — ${notes || 'No comments'} · ${siteName} · ${id}`;
+      NotificationService.send(
+        [...new Set([mission.technician_id, mission.driver_id].filter(Boolean))],
+        'report_rejected',
+        body,
+        { missionId: id },
+      );
+      NotificationService.send(
+        adminIds,
+        'report_rejected',
+        `Report rejected by admin · ${siteName} · ${id}`,
         { missionId: id },
       );
     }

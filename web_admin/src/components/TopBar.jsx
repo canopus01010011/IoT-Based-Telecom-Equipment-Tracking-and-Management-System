@@ -25,6 +25,7 @@ const DEFAULT_CFG = { label: 'Notification', color: '#60a5fa', bg: 'rgba(59,130,
 
 function guessType(title) {
   const t = (title || '').toLowerCase()
+  if (t.includes('rejected')) return 'report_rejected'
   if (t.includes('depart') || t.includes('route')) return 'departure'
   if (t.includes('arriv')) return 'arrival'
   if (t.includes('incident')) return 'incident'
