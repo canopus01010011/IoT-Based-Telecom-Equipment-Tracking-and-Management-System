@@ -68,20 +68,32 @@ const buildGpsMap = (gpsData) => {
   return gpsMap
 }
 
-// ─── OSRM real-road routing ───────────────────────────────────────────────────
-async function fetchOsrmRoute(fromLat, fromLng, toLat, toLng) {
+// ─── Programmed route from IoT / backend GPX files ───────────────────────────
+async function fetchProgrammedRoute(containerId) {
+  const route = ROUTES_BY_CONTAINER[containerId]
+  if (!route?.site) return null
+  const token = localStorage.getItem('token')
   try {
-    const url = `https://router.project-osrm.org/route/v1/driving/` +
-      `${fromLng},${fromLat};${toLng},${toLat}` +
-      `?overview=full&geometries=geojson`
-    const res  = await fetch(url)
+    const res = await fetch(`${API_URL}/api/gps/route/${route.site}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     const json = await res.json()
-    if (json.routes && json.routes[0]) {
-      // coords = [[lng,lat], ...] → convert to [[lat,lng], ...]
-      return json.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng])
+    if (json.waypoints?.length) {
+      return json.waypoints.map(w => [w.latitude, w.longitude])
     }
-  } catch (_) { /* fallback to straight line */ }
+  } catch (_) {}
   return null
+}
+
+// Find closest waypoint index to current position, returns the slice up to it
+function sliceRouteToPosition(routeCoords, lat, lng) {
+  if (!routeCoords?.length || lat == null || lng == null) return null
+  let bestIdx = 0, bestDist = Infinity
+  for (let i = 0; i < routeCoords.length; i++) {
+    const d = (routeCoords[i][0] - lat) ** 2 + (routeCoords[i][1] - lng) ** 2
+    if (d < bestDist) { bestDist = d; bestIdx = i }
+  }
+  return routeCoords.slice(0, bestIdx + 1)
 }
 
 // ─── Map modal ────────────────────────────────────────────────────────────────
@@ -144,37 +156,33 @@ function MapModal({ mission, onClose }) {
     truckRef.current = L.marker([lat, lng], { icon: truckIcon }).addTo(map)
       .bindPopup(`<b>${mission.driver}</b><br/>${t.currentPosition}`)
 
-    // ── Draw real road routes ──────────────────────────────────────────────
+    // ── Draw programmed route from IoT / GPX ──────────────────────────────
     const drawRoutes = async () => {
-      // Full planned route: depot → destination (dashed, light blue)
-      const fullCoords = await fetchOsrmRoute(dLat, dLng, tLat, tLng)
-      if (fullCoords) {
+      const fullCoords = await fetchProgrammedRoute(mission.container_id)
+      if (fullCoords && fullCoords.length > 1) {
+        // Planned route (full, dashed light blue)
         L.polyline(fullCoords, {
           color: '#93c5fd', weight: 4, dashArray: '10 7', opacity: 0.7,
         }).addTo(map)
+        map.fitBounds(L.latLngBounds(fullCoords.map(c => L.latLng(c[0], c[1]))), { padding: [60, 60] })
+
+        // Traveled route: slice up to current position (solid blue)
+        if (mission.lat != null && mission.lng != null) {
+          const traveled = sliceRouteToPosition(fullCoords, mission.lat, mission.lng)
+          if (traveled && traveled.length > 1) {
+            travelLine.current = L.polyline(traveled, {
+              color: '#3b82f6', weight: 5, opacity: 0.9,
+            }).addTo(map)
+          }
+        }
       } else {
-        // Fallback straight line
+        // Fallback straight line (no programmed route available)
         L.polyline([[dLat, dLng], [tLat, tLng]], {
           color: '#93c5fd', weight: 3, dashArray: '8 6', opacity: 0.6,
         }).addTo(map)
+        map.fitBounds([[dLat, dLng], [tLat, tLng]], { padding: [60, 60] })
       }
 
-      // Traveled route: depot → current truck position (solid blue)
-      if (mission.lat != null && mission.lng != null) {
-        const travelCoords = await fetchOsrmRoute(dLat, dLng, mission.lat, mission.lng)
-        if (travelCoords) {
-          travelLine.current = L.polyline(travelCoords, {
-            color: '#3b82f6', weight: 5, opacity: 0.9,
-          }).addTo(map)
-        } else {
-          travelLine.current = L.polyline([[dLat, dLng], [lat, lng]], {
-            color: '#3b82f6', weight: 4, opacity: 0.8,
-          }).addTo(map)
-        }
-      }
-
-      // Fit bounds to full route
-      map.fitBounds([[dLat, dLng], [tLat, tLng]], { padding: [60, 60] })
       setRouteReady(true)
     }
 
@@ -182,38 +190,39 @@ function MapModal({ mission, onClose }) {
 
     return () => {
       if (mapObj.current) { mapObj.current.remove(); mapObj.current = null }
-      truckRef.current  = null
+      truckRef.current   = null
       travelLine.current = null
+      routeCache.current = null
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mission.id])
 
   // Update truck position in real-time (socket/GPS poll updates mission.lat/lng)
+  const routeCache = useRef(null)
   useEffect(() => {
     if (!truckRef.current || mission.lat == null || mission.lng == null) return
     truckRef.current.setLatLng([mission.lat, mission.lng])
     if (mapObj.current) mapObj.current.panTo([mission.lat, mission.lng])
 
     // Redraw traveled line
-    if (travelLine.current && mapObj.current) {
-      const dLat = mission.departLat
-      const dLng = mission.departLng
-      if (dLat != null && dLng != null) {
-        fetchOsrmRoute(dLat, dLng, mission.lat, mission.lng).then(coords => {
-          if (!mapObj.current) return
-          if (travelLine.current) {
-            travelLine.current.remove()
-            travelLine.current = null
-          }
-          const L = window.L
-          if (!L) return
-          const latLngs = coords || [[dLat, dLng], [mission.lat, mission.lng]]
-          travelLine.current = L.polyline(latLngs, {
-            color: '#3b82f6', weight: 5, opacity: 0.9,
-          }).addTo(mapObj.current)
-        })
+    const rebuildTraveled = async () => {
+      if (!mapObj.current) return
+      const L = window.L
+      if (!L) return
+
+      if (!routeCache.current && mission.container_id) {
+        routeCache.current = await fetchProgrammedRoute(mission.container_id)
+      }
+      if (travelLine.current) { travelLine.current.remove(); travelLine.current = null }
+
+      const traveled = sliceRouteToPosition(routeCache.current, mission.lat, mission.lng)
+      if (traveled && traveled.length > 1) {
+        travelLine.current = L.polyline(traveled, {
+          color: '#3b82f6', weight: 5, opacity: 0.9,
+        }).addTo(mapObj.current)
       }
     }
+    rebuildTraveled()
   }, [mission.lat, mission.lng])
 
   const fmt = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
