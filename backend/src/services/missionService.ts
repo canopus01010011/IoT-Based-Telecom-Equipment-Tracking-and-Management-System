@@ -121,17 +121,30 @@ export class MissionService {
 
     await mission.update(updates);
 
-    // Save admin notes if provided
+    // Save admin notes and clear report content on reject
     if (notes) {
       try {
         const existing = await Report.findOne({ where: { mission_id: id } });
         if (existing) {
-          await existing.update({ notes });
+          await existing.update({
+            notes,
+            ...(status === 'pending' ? { delivery_photo_url: [], description: '' } : {}),
+          });
         } else {
           await Report.create({ mission_id: id, description: '', notes });
         }
       } catch (err: any) {
         console.error('Failed to save report notes:', err.message);
+      }
+    } else if (status === 'pending' && previousStatus === 'completed') {
+      // Reject without comment — still clear report content
+      try {
+        const existing = await Report.findOne({ where: { mission_id: id } });
+        if (existing) {
+          await existing.update({ delivery_photo_url: [], description: '', notes: '' });
+        }
+      } catch (err: any) {
+        console.error('Failed to clear report:', err.message);
       }
     }
 
