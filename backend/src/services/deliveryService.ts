@@ -1,5 +1,11 @@
 import { Op } from 'sequelize';
-import { Confirmation, Container, Mission, Report, User } from '../models/index.js';
+import { Confirmation, Container, Mission, Report, Site, User } from '../models/index.js';
+import { NotificationService } from './notificationService.js';
+
+async function getAdminIds(): Promise<string[]> {
+  const admins = await User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
+  return admins.map(u => u.id);
+}
 
 interface ScanData {
   missionId: string;
@@ -94,6 +100,23 @@ export class DeliveryService {
     });
     await mission.update({ status: 'in-progress', start_date: new Date() });
 
+    const reloaded = await Mission.findByPk(mission.id, {
+      include: [
+        { model: User, as: 'driver', attributes: ['full_name'] },
+        { model: Site, attributes: ['name'] },
+      ],
+    });
+    const adminIds = await getAdminIds();
+    const driverName = ((reloaded as any)?.driver as any)?.full_name || '';
+    const siteName = ((reloaded as any)?.Site as any)?.name || '';
+    const body = `${driverName} · ${mission.container_id || ''} · ${siteName} · ${mission.id}`;
+    NotificationService.send(
+      [...new Set([...adminIds, mission.technician_id].filter(Boolean))],
+      'departure',
+      body,
+      { missionId: mission.id },
+    );
+
     return {
       success: true,
       missionId: mission.id,
@@ -131,6 +154,25 @@ export class DeliveryService {
         delivery_photo_url: [],
       },
     });
+
+    const reloaded = await Mission.findByPk(mission.id, {
+      include: [
+        { model: User, as: 'technician', attributes: ['full_name'] },
+        { model: User, as: 'driver', attributes: ['full_name'] },
+        { model: Site, attributes: ['name'] },
+      ],
+    });
+    const adminIds = await getAdminIds();
+    const techName = ((reloaded as any)?.technician as any)?.full_name || '';
+    const driverName = ((reloaded as any)?.driver as any)?.full_name || '';
+    const siteName = ((reloaded as any)?.Site as any)?.name || '';
+    const body = `${techName || driverName} · ${siteName} · ${mission.id}`;
+    NotificationService.send(
+      [...new Set([...adminIds, mission.technician_id, mission.driver_id].filter(Boolean))],
+      'completed',
+      body,
+      { missionId: mission.id },
+    );
 
     return {
       success: true,

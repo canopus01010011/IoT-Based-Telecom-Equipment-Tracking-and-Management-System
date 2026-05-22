@@ -1,70 +1,8 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import axios from 'axios'
+import { io } from 'socket.io-client'
 
 const NotificationContext = createContext(null)
-
-// type: 'departure' | 'arrival' | 'incident' | 'completed' | 'report' | 'work_start' | 'work_done' | 'unavailable' | 'available'
-const MOCK_NOTIFS = [
-  {
-    id: 1, read: false, type: 'departure', role: 'driver',
-    name: 'Karim Benali', vehicule: 'Van — 16-DZ-142',
-    site: 'BTS Bab Ezzouar', ref: 'MSN-091', time: '08:42',
-  },
-  {
-    id: 2, read: false, type: 'report', role: 'technician',
-    name: 'Youcef Amrani', specialite: 'Fiber Optics',
-    site: 'BTS Bab Ezzouar', ref: 'MSN-091', time: '08:30',
-  },
-  {
-    id: 3, read: false, type: 'arrival', role: 'driver',
-    name: 'Ali Hamid', vehicule: 'Truck — 09-DZ-871',
-    site: 'Kouba Tower', ref: 'MSN-090', time: '07:58',
-  },
-  {
-    id: 4, read: false, type: 'work_start', role: 'technician',
-    name: 'Nassim Boulifa', specialite: 'Antenna / Tower',
-    site: 'Kouba Tower', ref: 'MSN-090', time: '08:05',
-  },
-  {
-    id: 5, read: false, type: 'incident', role: 'driver',
-    name: 'Mohamed Saadi', vehicule: 'Pick-up — 23-DZ-305',
-    site: 'Rouiba Tower', ref: 'MSN-089', time: '07:20',
-  },
-  {
-    id: 6, read: false, type: 'incident', role: 'technician',
-    name: 'Djamel Khelif', specialite: 'Network Cabling',
-    site: 'Rouiba Tower', ref: 'MSN-089', time: '07:25',
-  },
-  {
-    id: 7, read: true, type: 'work_done', role: 'technician',
-    name: 'Amine Cherif', specialite: 'Multi-skilled',
-    site: 'Hussein Dey', ref: 'MSN-083', time: '06:10',
-  },
-  {
-    id: 8, read: true, type: 'completed', role: 'driver',
-    name: 'Omar Meziane', vehicule: 'Van — 07-DZ-490',
-    site: 'Hussein Dey', ref: 'MSN-083', time: '06:00',
-  },
-  {
-    id: 9, read: true, type: 'unavailable', role: 'driver',
-    name: 'Yacine Brahim', vehicule: 'Truck — 14-DZ-228',
-    site: null, ref: null, time: 'Yesterday',
-  },
-  {
-    id: 10, read: true, type: 'available', role: 'technician',
-    name: 'Riad Ouali', specialite: 'Generator',
-    site: null, ref: null, time: 'Yesterday',
-  },
-  {
-    id: 11, read: true, type: 'departure', role: 'driver',
-    name: 'Karim Benali', vehicule: 'Van — 16-DZ-142',
-    site: 'Hydra Site', ref: 'MSN-082', time: 'Yesterday',
-  },
-  {
-    id: 12, read: true, type: 'report', role: 'technician',
-    name: 'Sofiane Tebbal', specialite: 'Site Air Conditioning',
-    site: 'Dar El Beida', ref: 'MSN-088', time: 'Yesterday',
-  },
-]
 
 export const NOTIF_CONFIG = {
   departure:   { label: 'Departed for route',        color: '#3b82f6',  bg: 'rgba(59,130,246,.12)',  icon: 'truck'    },
@@ -78,21 +16,76 @@ export const NOTIF_CONFIG = {
   available:   { label: 'Now available',              color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'user-ok'  },
 }
 
+const DEFAULT_CFG = { label: 'Notification', color: '#60a5fa', bg: 'rgba(59,130,246,.08)', icon: 'bell' }
+
+function parseNotifBody(body) {
+  if (!body) return { name: '', detail: '', site: '', ref: '' }
+  const parts = body.split(' · ').map(s => s.trim())
+  return {
+    name: parts[0] || '',
+    detail: parts[1] || '',
+    site: parts[2] || '',
+    ref: parts[3] || '',
+  }
+}
+
+function guessType(title) {
+  const t = (title || '').toLowerCase()
+  if (t.includes('depart') || t.includes('route')) return 'departure'
+  if (t.includes('arriv')) return 'arrival'
+  if (t.includes('incident')) return 'incident'
+  if (t.includes('complet') || t.includes('done')) return 'completed'
+  if (t.includes('report')) return 'report'
+  if (t.includes('work') || t.includes('interv')) return t.includes('start') ? 'work_start' : 'work_done'
+  if (t.includes('unavail')) return 'unavailable'
+  if (t.includes('avail')) return 'available'
+  return null
+}
+
 export function NotificationProvider({ children }) {
-  const [notifs, setNotifs] = useState(MOCK_NOTIFS)
+  const [notifs, setNotifs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const socketRef = useRef(null)
 
-  const markAllRead = useCallback(() => {
-    setNotifs(prev => prev.map(n => ({ ...n, read: true })))
+  const fetchNotifs = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      const res = await axios.get('/api/notifications?limit=50', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.data?.data) {
+        setNotifs(res.data.data)
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
-  const markRead = useCallback((id) => {
-    setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
-  }, [])
+  useEffect(() => {
+    fetchNotifs()
+    const interval = setInterval(fetchNotifs, 30000)
 
-  const unreadCount = notifs.filter(n => !n.read).length
+    const apiUrl = import.meta.env.VITE_API_URL || ''
+    const socketUrl = apiUrl.replace(/\/api$/, '')
+    const socket = io(socketUrl, { transports: ['websocket'], reconnection: true, reconnectionDelay: 5000 })
+    socketRef.current = socket
+
+    socket.on('notification', (notif) => {
+      setNotifs(prev => [notif, ...prev])
+    })
+
+    return () => {
+      clearInterval(interval)
+      socket.disconnect()
+      socketRef.current = null
+    }
+  }, [fetchNotifs])
 
   return (
-    <NotificationContext.Provider value={{ notifs, unreadCount, markAllRead, markRead }}>
+    <NotificationContext.Provider value={{ notifs, loading }}>
       {children}
     </NotificationContext.Provider>
   )

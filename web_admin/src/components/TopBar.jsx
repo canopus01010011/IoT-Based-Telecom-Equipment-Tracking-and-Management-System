@@ -10,6 +10,7 @@ const BellIcon = () => (
 )
 
 const ICONS = {
+  bell:      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
   truck:     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
   'map-pin': <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
   alert:     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
@@ -20,10 +21,42 @@ const ICONS = {
   'user-ok': <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
 }
 
-function NotifIcon({ type, read }) {
-  const cfg = NOTIF_CONFIG[type]
+const DEFAULT_CFG = { label: 'Notification', color: '#60a5fa', bg: 'rgba(59,130,246,.08)', icon: 'bell' }
+
+function guessType(title) {
+  const t = (title || '').toLowerCase()
+  if (t.includes('depart') || t.includes('route')) return 'departure'
+  if (t.includes('arriv')) return 'arrival'
+  if (t.includes('incident')) return 'incident'
+  if (t.includes('complet') || t.includes('done')) return 'completed'
+  if (t.includes('report')) return 'report'
+  if (t.includes('work') || t.includes('interv')) return t.includes('start') ? 'work_start' : 'work_done'
+  if (t.includes('unavail')) return 'unavailable'
+  if (t.includes('avail')) return 'available'
+  return null
+}
+
+function parseBody(body) {
+  if (!body) return { name: '', detail: '', site: '', ref: '' }
+  const parts = body.split(' · ').map(s => s.trim())
+  return { name: parts[0] || '', detail: parts[1] || '', site: parts[2] || '', ref: parts[3] || '' }
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return ''
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
+
+function NotifIcon({ type }) {
+  const cfg = NOTIF_CONFIG[type] || DEFAULT_CFG
   return (
-    <div style={{ width:36, height:36, borderRadius:9, flexShrink:0, background: read ? 'rgba(148,163,184,.07)' : cfg.bg, border:`1px solid ${read ? 'rgba(148,163,184,.1)' : cfg.color+'40'}`, display:'flex', alignItems:'center', justifyContent:'center', color: read ? 'rgba(148,163,184,.4)' : cfg.color }}>
+    <div style={{ width:36, height:36, borderRadius:9, flexShrink:0, background: cfg.bg, border:`1px solid ${cfg.color}40`, display:'flex', alignItems:'center', justifyContent:'center', color: cfg.color }}>
       {ICONS[cfg.icon]}
     </div>
   )
@@ -31,9 +64,8 @@ function NotifIcon({ type, read }) {
 
 export default function TopBar({ title }) {
   const t = useT()
-  const { notifs, unreadCount, markAllRead, markRead } = useNotifications()
-  const [open, setOpen]     = useState(false)
-  const [filter, setFilter] = useState('all')
+  const { notifs } = useNotifications()
+  const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
   useEffect(() => {
@@ -41,8 +73,6 @@ export default function TopBar({ title }) {
     document.addEventListener('mousedown', h)
     return () => document.removeEventListener('mousedown', h)
   }, [])
-
-  const displayed = filter === 'all' ? notifs : notifs.filter(n => n.role === filter)
 
   return (
     <header style={{ height:56, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 24px', background:'var(--bg-topbar)', borderBottom:'1px solid var(--border-subtle)', flexShrink:0, position:'relative', zIndex:100 }}>
@@ -52,9 +82,9 @@ export default function TopBar({ title }) {
         <div ref={ref} style={{ position:'relative' }}>
           <button onClick={() => setOpen(v => !v)} style={{ width:36, height:36, borderRadius:8, border: open ? '1px solid rgba(59,130,246,.4)' : '1px solid rgba(59,130,246,.15)', background: open ? 'rgba(59,130,246,.1)' : 'rgba(255,255,255,.03)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color: open ? '#60a5fa' : 'rgba(148,163,184,.6)', position:'relative' }}>
             <BellIcon />
-            {unreadCount > 0 && (
+            {notifs.length > 0 && (
               <span style={{ position:'absolute', top:-4, right:-4, minWidth:16, height:16, borderRadius:8, padding:'0 4px', background:'#f87171', border:'2px solid var(--bg-topbar)', fontSize:9, fontWeight:700, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                {unreadCount}
+                {notifs.length}
               </span>
             )}
           </button>
@@ -62,42 +92,32 @@ export default function TopBar({ title }) {
           {open && (
             <div style={{ position:'absolute', top:'calc(100% + 10px)', right:0, width:360, background:'var(--bg-panel)', border:'1px solid var(--border-strong)', borderRadius:14, boxShadow:'0 24px 64px rgba(0,0,0,.4)', overflow:'hidden' }}>
               <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(59,130,246,.1)' }}>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <span style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)' }}>Notifications</span>
-                    {unreadCount > 0 && <span style={{ fontSize:10, fontWeight:700, background:'#f87171', color:'#fff', borderRadius:20, padding:'1px 7px' }}>{unreadCount} new</span>}
-                  </div>
-                  {unreadCount > 0 && <button onClick={markAllRead} style={{ fontSize:11, color:'#60a5fa', background:'none', border:'none', cursor:'pointer', padding:0 }}>Mark all read</button>}
-                </div>
-                <div style={{ display:'flex', gap:6 }}>
-                  {[{key:'all',label:'All'},{key:'driver',label:'🚛 Drivers'},{key:'technician',label:'🔧 Technicians'}].map(f => (
-                    <button key={f.key} onClick={() => setFilter(f.key)} style={{ fontSize:11, padding:'4px 10px', borderRadius:20, cursor:'pointer', background: filter===f.key ? 'rgba(59,130,246,.15)' : 'transparent', border: filter===f.key ? '1px solid rgba(59,130,246,.35)' : '1px solid rgba(59,130,246,.1)', color: filter===f.key ? '#60a5fa' : 'rgba(148,163,184,.5)', fontWeight: filter===f.key ? 600 : 400 }}>
-                      {f.label}
-                    </button>
-                  ))}
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <span style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)' }}>Notifications</span>
+                  {notifs.length > 0 && <span style={{ fontSize:10, fontWeight:700, background:'#f87171', color:'#fff', borderRadius:20, padding:'1px 7px' }}>{notifs.length} total</span>}
                 </div>
               </div>
 
               <div style={{ maxHeight:360, overflowY:'auto' }}>
-                {displayed.length === 0
+                {notifs.length === 0
                   ? <p style={{ textAlign:'center', padding:'28px', fontSize:12, color:'rgba(148,163,184,.4)' }}>No notifications</p>
-                  : displayed.map(n => {
-                    const cfg = NOTIF_CONFIG[n.type]
+                  : notifs.map(n => {
+                    const type = guessType(n.title)
+                    const cfg = NOTIF_CONFIG[type] || DEFAULT_CFG
+                    const parsed = parseBody(n.body)
                     return (
-                      <div key={n.id} onClick={() => markRead(n.id)} style={{ display:'flex', gap:12, padding:'12px 16px', borderBottom:'1px solid rgba(255,255,255,.04)', background: n.read ? 'transparent' : 'rgba(59,130,246,.04)', cursor:'pointer' }}>
-                        <NotifIcon type={n.type} read={n.read} />
+                      <div key={n.id} style={{ display:'flex', gap:12, padding:'12px 16px', borderBottom:'1px solid rgba(255,255,255,.04)' }}>
+                        <NotifIcon type={type} />
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
-                            <span style={{ fontSize:12, fontWeight:600, color: n.read ? 'rgba(148,163,184,.7)' : '#e2e8f0' }}>{n.name}</span>
-                            <span style={{ fontSize:10, color: n.read ? 'rgba(148,163,184,.3)' : cfg.color, background: n.read ? 'rgba(148,163,184,.08)' : cfg.bg, padding:'1px 7px', borderRadius:20 }}>{n.role === 'driver' ? 'Driver' : 'Tech.'}</span>
-                            {!n.read && <span style={{ width:5, height:5, borderRadius:'50%', background:cfg.color, flexShrink:0 }} />}
+                            <span style={{ fontSize:12, fontWeight:600, color:'#e2e8f0' }}>{parsed.name || n.title}</span>
+                            <span style={{ fontSize:10, color: cfg.color, background: cfg.bg, padding:'1px 7px', borderRadius:20 }}>{cfg.label}</span>
                           </div>
-                          <p style={{ fontSize:11, fontWeight:500, color: n.read ? 'rgba(148,163,184,.45)' : cfg.color, marginBottom:3 }}>{cfg.label}</p>
-                          {n.site && <p style={{ fontSize:11, color:'rgba(148,163,184,.5)', marginBottom:3 }}>{n.site}{n.ref && <span style={{ color:'rgba(148,163,184,.3)' }}> · {n.ref}</span>}</p>}
-                          <div style={{ display:'flex', gap:6 }}>
-                            <span style={{ fontSize:10, color:'rgba(148,163,184,.3)' }}>{n.vehicule || n.specialite}</span>
-                            <span style={{ fontSize:10, color:'rgba(148,163,184,.2)' }}>·</span>
-                            <span style={{ fontSize:10, color:'rgba(148,163,184,.3)' }}>{n.time}</span>
+                          {parsed.site && <p style={{ fontSize:11, color:'rgba(148,163,184,.5)', marginBottom:3 }}>{parsed.site}{parsed.ref && <span style={{ color:'rgba(148,163,184,.3)' }}> · {parsed.ref}</span>}</p>}
+                          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                            {parsed.detail && <span style={{ fontSize:10, color:'rgba(148,163,184,.3)' }}>{parsed.detail}</span>}
+                            {parsed.detail && <span style={{ fontSize:10, color:'rgba(148,163,184,.2)' }}>·</span>}
+                            <span style={{ fontSize:10, color:'rgba(148,163,184,.3)' }}>{timeAgo(n.sent_at)}</span>
                           </div>
                         </div>
                       </div>

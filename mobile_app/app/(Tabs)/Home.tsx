@@ -32,7 +32,7 @@ export default function Dashboard() {
   const { t, isRTL } = useLanguage();
   const { user } = useAuth();
   const { missions, loading, activeMissions, completedMissions } = useMissions();
-  const { unreadCount: notifications } = useNotifications();
+  const { notifications } = useNotifications();
   const greeting = user?.full_name || user?.email || "User";
 
   return (
@@ -66,9 +66,9 @@ export default function Dashboard() {
           >
             <BellIcon color={colors.primary} size={22} />
 
-            {notifications > 0 && (
+            {notifications.length > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{notifications}</Text>
+                <Text style={styles.badgeText}>{notifications.length}</Text>
               </View>
             )}
           </Pressable>

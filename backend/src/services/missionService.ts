@@ -1,4 +1,6 @@
+import { Op } from 'sequelize';
 import { Mission, Site, User, MissionFile } from '../models/index.js';
+import { NotificationService } from './notificationService.js';
 
 const normalizeMissionPayload = (data: any) => ({
   status: data.status || 'pending',
@@ -116,6 +118,39 @@ export class MissionService {
     if (status === 'completed') updates.end_date = new Date();
 
     await mission.update(updates);
+
+    // Fire notifications
+    const reloaded = await Mission.findByPk(id, {
+      include: [
+        { model: User, as: 'technician', attributes: ['id', 'full_name'] },
+        { model: User, as: 'driver', attributes: ['id', 'full_name'] },
+        { model: Site, attributes: ['name'] },
+      ],
+    });
+    const adminIds = (await User.findAll({ where: { role: 'admin' }, attributes: ['id'] })).map(u => u.id);
+    const r = reloaded as any;
+    const siteName = r?.Site?.name || '';
+    const techName = r?.technician?.full_name || '';
+    const driverName = r?.driver?.full_name || '';
+
+    if (status === 'in-progress') {
+      const body = `${driverName} · ${reloaded?.container_id || ''} · ${siteName} · ${id}`;
+      NotificationService.send(
+        [...new Set([...adminIds, mission.technician_id, mission.driver_id].filter(Boolean))],
+        'departure',
+        body,
+        { missionId: id },
+      );
+    } else if (status === 'completed') {
+      const body = `${techName || driverName} · ${siteName} · ${id}`;
+      NotificationService.send(
+        [...new Set([...adminIds, mission.technician_id, mission.driver_id].filter(Boolean))],
+        'completed',
+        body,
+        { missionId: id },
+      );
+    }
+
     return mission;
   }
 }

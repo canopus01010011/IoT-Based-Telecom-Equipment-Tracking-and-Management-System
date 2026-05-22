@@ -113,13 +113,29 @@ function MapModal({ mission, onClose }) {
       const deptIcon = L.divIcon({ className:'', html:`<div style="width:30px;height:30px;background:#854f0b;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fbbf24;font-size:16px;">🏭</div>`, iconSize:[30,30], iconAnchor:[15,15] })
       L.marker([dLat, dLng], { icon: deptIcon }).addTo(map).bindPopup(t.departurePoint)
       
-      // Draw planned route (dashed gray)
+      const distSq = (a, b) => {
+        const dLat = a[0] - b[0], dLng = a[1] - b[1]
+        return dLat * dLat + dLng * dLng
+      }
+      const currentPos = [lat, lng]
+
       if (plannedRoute.length > 0) {
         const routeCoords = plannedRoute.map(p => [p.latitude, p.longitude])
-        L.polyline(routeCoords, { color:'#6b7280', weight:3, dashArray:'5 5', opacity:0.6 }).addTo(map)
+        // find closest point on route to current truck position
+        let closestIdx = 0, minDist = Infinity
+        routeCoords.forEach((pt, i) => {
+          const d = distSq(pt, currentPos)
+          if (d < minDist) { minDist = d; closestIdx = i }
+        })
+        const traveled = routeCoords.slice(0, closestIdx + 1)
+        const remaining = routeCoords.slice(closestIdx)
+        if (traveled.length > 1)
+          L.polyline(traveled, { color:'#3b82f6', weight:4, opacity:0.9 }).addTo(map)
+        if (remaining.length > 1)
+          L.polyline(remaining, { color:'#f97316', weight:4, opacity:0.9 }).addTo(map)
       } else {
-        // Fallback to direct line if no planned route
-        L.polyline([[dLat, dLng],[lat, lng],[destLat, destLng]], { color:'#6b7280', weight:3, dashArray:'5 5', opacity:0.6 }).addTo(map)
+        L.polyline([[dLat, dLng], currentPos], { color:'#3b82f6', weight:4, opacity:0.9 }).addTo(map)
+        L.polyline([currentPos, [destLat, destLng]], { color:'#f97316', weight:4, opacity:0.9 }).addTo(map)
       }
 
       // Zoom to fit all points

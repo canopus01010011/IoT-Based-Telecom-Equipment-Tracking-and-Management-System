@@ -1,6 +1,7 @@
 import { fcm } from '../config/firebase.js';
 import { Notification, User } from '../models/index.js';
 import { Op } from 'sequelize';
+import { emitNotification } from '../sockets/socketHandler.js';
 import type { BatchResponse } from 'firebase-admin/messaging';
 
 export class NotificationService {
@@ -145,15 +146,49 @@ export class NotificationService {
   }
 
   /**
+   * Universal send: stores in DB + emits via socket + attempts FCM push.
+   * Call this from any service to create a notification.
+   */
+  static async send(userIds: string[], title: string, body: string, data?: Record<string, any>) {
+    await this.storeNotification(userIds, title, body, data);
+
+    if (!fcm) return;
+
+    const users = await User.findAll({
+      where: { id: { [Op.in]: userIds } },
+      attributes: ['id', 'fcm_token'],
+    });
+
+    const tokens = users.filter(u => u.fcm_token).map(u => u.fcm_token!);
+    if (tokens.length === 0) return;
+
+    try {
+      await fcm.sendEachForMulticast({
+        tokens,
+        notification: { title, body },
+        data: data ? this.formatData(data) : undefined,
+      } as any);
+    } catch (error) {
+      console.error('❌ FCM send failed:', error);
+    }
+  }
+
+  /**
    * Store notification in database
    */
   private static async storeNotification(userIds: string[], title: string, body: string, _data?: Record<string, any>) {
     try {
-      await Notification.create({
+      const notif = await Notification.create({
         user_ids: userIds,
         title,
         body,
         sent_at: new Date(),
+      });
+      emitNotification({
+        id: notif.id,
+        title: notif.title,
+        body: notif.body,
+        sent_at: notif.sent_at.toISOString(),
       });
     } catch (error) {
       console.error('❌ Failed to store notification:', error);
@@ -189,26 +224,4 @@ export class NotificationService {
     return notifications;
   }
 
-  /**
-   * Mark notification as read
-   */
-  static async markAsRead(notificationId: string, userId: string) {
-    const notification = await Notification.findOne({
-      where: { id: notificationId, user_ids: { [Op.contains]: [userId] } },
-    });
-
-    if (!notification) {
-      throw new Error('Notification not found');
-    }
-
-    return notification;
-  }
-
-  /**
-   * Get unread count for user
-   */
-  static async getUnreadCount(userId: string) {
-    void userId;
-    return { unreadCount: 0 };
-  }
 }
