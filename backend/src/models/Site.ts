@@ -9,10 +9,11 @@ interface SiteAttributes {
   address: string;
   latitude: number;
   longitude: number;
+  route?: string;
   created_at?: Date;
 }
 
-type SiteCreationAttributes = Optional<SiteAttributes, 'id' | 'created_at'>;
+type SiteCreationAttributes = Optional<SiteAttributes, 'id' | 'created_at' | 'route'>;
 
 class Site extends Model<SiteAttributes, SiteCreationAttributes> implements SiteAttributes {
   public id!: string;
@@ -20,6 +21,7 @@ class Site extends Model<SiteAttributes, SiteCreationAttributes> implements Site
   public address!: string;
   public latitude!: number;
   public longitude!: number;
+  public route?: string;
   public created_at!: Date;
 }
 
@@ -49,6 +51,10 @@ Site.init({
     type: DataTypes.DECIMAL(11, 8),
     field: 'site_longitude',
     allowNull: false
+  },
+  route: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
 }, {
   sequelize,

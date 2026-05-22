@@ -30,6 +30,11 @@ export default function MapScreen() {
   const containerId = (activeMission?.raw as Record<string, unknown>)
     ?.container_id as string | undefined;
 
+  const site = activeMission?.raw
+    ? ((activeMission.raw as Record<string, any>).Site ??
+      (activeMission.raw as Record<string, any>).site)
+    : null;
+
   const {
     latitude: iotLat,
     longitude: iotLng,
@@ -37,15 +42,11 @@ export default function MapScreen() {
     battery: iotBattery,
     serial: iotSerial,
     trackPoints,
-  } = useLiveGps(containerId);
+    plannedRoute,
+  } = useLiveGps(containerId, site?.route);
 
   const [distance, setDistance] = useState("");
   const [duration, setDuration] = useState("");
-
-  const site = activeMission?.raw
-    ? ((activeMission.raw as Record<string, any>).Site ??
-      (activeMission.raw as Record<string, any>).site)
-    : null;
 
   const destination =
     site?.latitude != null && site?.longitude != null
@@ -161,8 +162,6 @@ export default function MapScreen() {
         initialRegion={region}
         showsUserLocation={enabled}
       >
-        {location && <Marker coordinate={location} title="You" pinColor="#3b82f6" />}
-
         <Marker coordinate={warehouse} title={WAREHOUSE.name} pinColor="#f59e0b" />
 
         <Marker coordinate={destination} title={activeMission.site} pinColor="#22c55e" />
@@ -175,27 +174,41 @@ export default function MapScreen() {
           </Marker>
         )}
 
-        {trailCoordinates.length > 0 ? (
+        {/* Planned route (complete path from start to destination) */}
+        {plannedRoute.length > 0 && (
           <Polyline
-            coordinates={[warehouse, ...trailCoordinates]}
-            strokeColor="#2563eb"
-            strokeWidth={5}
-          />
-        ) : (
-          <Polyline
-            coordinates={[warehouse, destination]}
+            coordinates={plannedRoute}
             strokeColor="#6b7280"
             strokeWidth={3}
             lineDashPattern={[5, 5]}
           />
         )}
 
-        {iotCoordinate && (
+        {/* Already traveled path (blue) */}
+        {trailCoordinates.length > 0 && (
+          <Polyline
+            coordinates={[warehouse, ...trailCoordinates]}
+            strokeColor="#3b82f6"
+            strokeWidth={5}
+          />
+        )}
+
+        {/* Remaining path to destination (orange) */}
+        {iotCoordinate && trailCoordinates.length > 0 && (
           <Polyline
             coordinates={[iotCoordinate, destination]}
-            strokeColor="#60a5fa"
+            strokeColor="#f97316"
+            strokeWidth={5}
+          />
+        )}
+
+        {/* No IoT position yet - show planned route */}
+        {!iotCoordinate && trailCoordinates.length === 0 && plannedRoute.length === 0 && (
+          <Polyline
+            coordinates={[warehouse, destination]}
+            strokeColor="#6b7280"
             strokeWidth={3}
-            lineDashPattern={[8, 6]}
+            lineDashPattern={[5, 5]}
           />
         )}
 

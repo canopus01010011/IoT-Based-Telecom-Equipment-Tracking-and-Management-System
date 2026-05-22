@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { GPSService } from '../services/gpsService.js';
 import { emitGPSUpdate } from '../sockets/socketHandler.js';
+import { parseGPXFile } from '../utils/gpxParser.js';
 
 export class GPSController {
   static async ingestIoTGPS(req: Request, res: Response, next: NextFunction) {
@@ -97,6 +98,29 @@ export class GPSController {
       const limit = parseInt(req.query.limit as string) || 300;
       const history = await GPSService.getContainerHistory(containerId as string, limit);
       res.json({ success: true, count: history.length, data: history });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getRoute(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { routeName } = req.params;
+      if (!routeName) {
+        return res.status(400).json({ error: 'Route name is required' });
+      }
+
+      const waypoints = parseGPXFile(routeName as string);
+      if (waypoints.length === 0) {
+        return res.status(404).json({ error: `Route not found: ${routeName}` });
+      }
+
+      res.json({
+        success: true,
+        routeName,
+        count: waypoints.length,
+        waypoints,
+      });
     } catch (error) {
       next(error);
     }

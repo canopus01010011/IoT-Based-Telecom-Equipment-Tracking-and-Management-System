@@ -56,11 +56,34 @@ function MapModal({ mission, onClose }) {
   const mapObj = useRef(null)
   const truckMarker = useRef(null)
   const [elapsed, setElapsed] = useState(0)
+  const [plannedRoute, setPlannedRoute] = useState([])
 
   useEffect(() => {
     const timer = setInterval(() => setElapsed(e => e + 1), 1000)
     return () => clearInterval(timer)
   }, [])
+
+  // Fetch planned route
+  useEffect(() => {
+    const fetchRoute = async () => {
+      if (!mission.route) {
+        setPlannedRoute([])
+        return
+      }
+      try {
+        const token = localStorage.getItem('token')
+        const headers = { Authorization: `Bearer ${token}` }
+        const response = await axios.get(`/api/gps/route/${encodeURIComponent(mission.route)}`, { headers })
+        if (response.data?.waypoints) {
+          setPlannedRoute(response.data.waypoints)
+        }
+      } catch (err) {
+        console.warn('Failed to fetch route:', err)
+        setPlannedRoute([])
+      }
+    }
+    fetchRoute()
+  }, [mission.route])
 
   useEffect(() => {
     if (!window.L || !mapRef.current) return
@@ -89,14 +112,27 @@ function MapModal({ mission, onClose }) {
       const dLng = departLng
       const deptIcon = L.divIcon({ className:'', html:`<div style="width:30px;height:30px;background:#854f0b;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fbbf24;font-size:16px;">🏭</div>`, iconSize:[30,30], iconAnchor:[15,15] })
       L.marker([dLat, dLng], { icon: deptIcon }).addTo(map).bindPopup(t.departurePoint)
-      L.polyline([[dLat, dLng],[lat, lng],[destLat, destLng]], { color:'#3b82f6', weight:3, dashArray:'8 6', opacity:.8 }).addTo(map)
-      map.fitBounds([[dLat,dLng],[destLat, destLng]], { padding:[60,60] })
+      
+      // Draw planned route (dashed gray)
+      if (plannedRoute.length > 0) {
+        const routeCoords = plannedRoute.map(p => [p.latitude, p.longitude])
+        L.polyline(routeCoords, { color:'#6b7280', weight:3, dashArray:'5 5', opacity:0.6 }).addTo(map)
+      } else {
+        // Fallback to direct line if no planned route
+        L.polyline([[dLat, dLng],[lat, lng],[destLat, destLng]], { color:'#6b7280', weight:3, dashArray:'5 5', opacity:0.6 }).addTo(map)
+      }
+
+      // Zoom to fit all points
+      const allPoints = plannedRoute.length > 0 
+        ? [[dLat,dLng], ...plannedRoute.map(p => [p.latitude, p.longitude]), [destLat, destLng]]
+        : [[dLat,dLng],[destLat, destLng]]
+      map.fitBounds(allPoints, { padding:[60,60] })
     } else {
       map.setView([lat, lng], 15)
     }
 
     return () => { if (mapObj.current) { mapObj.current.remove(); mapObj.current = null } }
-  }, [mission.id])
+  }, [mission.id, plannedRoute])
 
   // Update truck marker position in real-time
   useEffect(() => {
@@ -215,6 +251,7 @@ export default function SuiviMissions() {
               departLng: route.departLng ?? existing?.departLng ?? null,
               destLat: route.destLat ?? siteLat,
               destLng: route.destLng ?? siteLng,
+              route: route.site || m.Site?.route || m.Site?.name || '',
               container_id: m.container_id, gpsId: gps.gpsId ?? existing?.gpsId ?? null,
             }
           })
@@ -248,6 +285,7 @@ export default function SuiviMissions() {
               departLng: route.departLng ?? existing?.departLng ?? null,
               destLat: route.destLat ?? siteLat,
               destLng: route.destLng ?? siteLng,
+              route: route.site || m.Site?.route || m.Site?.name || '',
               container_id: m.container_id, gpsId: existing?.gpsId ?? null,
             }
           })
