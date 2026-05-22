@@ -36,8 +36,8 @@ export class MissionService {
 
   static async getAllMissions(query: any, userRole: string, userId: string) {
     const page = parseInt(query.page) || 1;
-    const limit = parseInt(query.limit) || 10;
-    const offset = (page - 1) * limit;
+    const limit = parseInt(query.limit) || 0;
+    const offset = limit > 0 ? (page - 1) * limit : 0;
     const where: any = {};
 
     if (userRole === 'technician') where.technician_id = userId;
@@ -45,23 +45,22 @@ export class MissionService {
 
     if (query.status) where.status = query.status;
 
-    const { count, rows } = await Mission.findAndCountAll({
+    const result = await Mission.findAndCountAll({
       where,
       include: [
         { model: User, as: 'technician', attributes: ['id', 'full_name', 'email'] },
         { model: User, as: 'driver', attributes: ['id', 'full_name', 'email'] },
         { model: Site, attributes: ['id', 'name', 'address', 'latitude', 'longitude'] },
       ],
-      limit,
-      offset,
-      order: [['scheduled_start_date', 'ASC']],
+      ...(limit > 0 ? { limit, offset } : {}),
+      order: [['scheduled_start_date', 'DESC']],
     });
 
     return {
-      missions: rows,
-      totalPages: Math.ceil(count / limit),
+      missions: result.rows,
+      totalPages: limit > 0 ? Math.ceil(result.count / limit) : 1,
       currentPage: page,
-      totalItems: count,
+      totalItems: result.count,
     };
   }
 

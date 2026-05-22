@@ -8,17 +8,18 @@ import DataTable   from '../components/DataTable'
 import { useT }    from '../context/LanguageContext'
 
 const MOCK = [
-  { id:1, ref:'MSN-087', site:'BTS Bab Ezzouar',  driver:'K. Benali',  equip:'Fiber + Antenna', date:'04/12/2024', statut:'Completed'   },
-  { id:2, ref:'MSN-086', site:'Kouba North Site',  driver:'A. Hamid',   equip:'Network Cabling', date:'04/11/2024', statut:'In Progress' },
-  { id:3, ref:'MSN-085', site:'Rouiba Tower',      driver:'M. Saadi',   equip:'Antenna / Tower', date:'04/10/2024', statut:'Incident'    },
-  { id:4, ref:'MSN-084', site:'Dar El Beida',      driver:'K. Benali',  equip:'Generator',       date:'04/09/2024', statut:'Cancelled'   },
-  { id:5, ref:'MSN-083', site:'Hussein Dey',       driver:'O. Meziane', equip:'Site A/C',        date:'04/08/2024', statut:'Completed'   },
-  { id:6, ref:'MSN-082', site:'Hydra Site',        driver:'A. Hamid',   equip:'Fiber Optics',    date:'04/07/2024', statut:'Completed'   },
-  { id:7, ref:'MSN-081', site:'BTS Bordj',         driver:'M. Saadi',   equip:'Network Cabling', date:'04/06/2024', statut:'Pending'     },
-  { id:8, ref:'MSN-080', site:'Baraki Tower',      driver:'K. Benali',  equip:'4G Antenna',      date:'04/05/2024', statut:'Completed'   },
+  { id:1, ref:'MSN-087', site:'BTS Bab Ezzouar',  driver:'K. Benali',  equip:'Fiber + Antenna', date:'04/12/2024', statut:'completed'   },
+  { id:2, ref:'MSN-086', site:'Kouba North Site',  driver:'A. Hamid',   equip:'Network Cabling', date:'04/11/2024', statut:'in-progress' },
+  { id:3, ref:'MSN-085', site:'Rouiba Tower',      driver:'M. Saadi',   equip:'Antenna / Tower', date:'04/10/2024', statut:'incident'    },
+  { id:4, ref:'MSN-084', site:'Dar El Beida',      driver:'K. Benali',  equip:'Generator',       date:'04/09/2024', statut:'cancelled'   },
+  { id:5, ref:'MSN-083', site:'Hussein Dey',       driver:'O. Meziane', equip:'Site A/C',        date:'04/08/2024', statut:'completed'   },
+  { id:6, ref:'MSN-082', site:'Hydra Site',        driver:'A. Hamid',   equip:'Fiber Optics',    date:'04/07/2024', statut:'completed'   },
+  { id:7, ref:'MSN-081', site:'BTS Bordj',         driver:'M. Saadi',   equip:'Network Cabling', date:'04/06/2024', statut:'pending'     },
+  { id:8, ref:'MSN-080', site:'Baraki Tower',      driver:'K. Benali',  equip:'4G Antenna',      date:'04/05/2024', statut:'completed'   },
 ]
 
-const STATUS_FILTERS = ['All', 'Completed', 'In Progress', 'Pending', 'Incident', 'Cancelled']
+const STATUS_FILTERS = ['All', 'Pending', 'In Progress', 'Completed']
+const FILTER_TO_API = { 'Pending': 'pending', 'In Progress': 'in-progress', 'Completed': 'completed' }
 const COLS = '.7fr 1.3fr 1fr 1.3fr .8fr .9fr'
 const PER_PAGE = 6
 
@@ -37,7 +38,7 @@ export default function Historique() {
   const [page, setPage]         = useState(1)
 
   useEffect(() => {
-    axios.get('/api/missions', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+    axios.get('/api/missions?limit=0', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       .then(r => setMissions((r.data.missions || []).map(m => ({
         id: m.id, ref: m.id, site: m.Site?.name || '', driver: m.driver?.full_name || '',
         equip: Array.isArray(m.equipment_list) ? m.equipment_list.map(e => e.equipment_id).join(', ') : '',
@@ -46,7 +47,8 @@ export default function Historique() {
   }, [])
 
   const filtered = missions.filter(m => {
-    const matchF = filtre === 'All' || m.statut === filtre
+    const apiStatus = FILTER_TO_API[filtre]
+    const matchF = filtre === 'All' || m.statut === apiStatus
     const matchS = m.site?.toLowerCase().includes(search.toLowerCase()) ||
                    m.driver?.toLowerCase().includes(search.toLowerCase()) ||
                    m.ref?.toLowerCase().includes(search.toLowerCase())
@@ -58,9 +60,9 @@ export default function Historique() {
 
   const stats = {
     total:    missions.length,
-    termines: missions.filter(m => m.statut === 'Completed').length,
-    incidents:missions.filter(m => m.statut === 'Incident').length,
-    annules:  missions.filter(m => m.statut === 'Cancelled').length,
+    termines: missions.filter(m => m.statut === 'completed').length,
+    incidents:missions.filter(m => m.statut === 'incident' || m.statut === 'Incident').length,
+    annules:  missions.filter(m => m.statut === 'cancelled' || m.statut === 'Cancelled').length,
   }
 
   return (

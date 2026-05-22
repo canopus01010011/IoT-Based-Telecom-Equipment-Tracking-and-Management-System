@@ -32,10 +32,15 @@ export const translations = {
     // Statuses (internal English key → display label)
     statuses: {
       All: 'All',
+      'in-progress': 'In Progress',
       'In Progress': 'In Progress',
+      pending: 'Pending',
       Pending: 'Pending',
+      incident: 'Incident',
       Incident: 'Incident',
+      cancelled: 'Cancelled',
       Cancelled: 'Cancelled',
+      completed: 'Completed',
       Completed: 'Completed',
       Approved: 'Approved',
       Rejected: 'Rejected',
@@ -270,10 +275,15 @@ export const translations = {
     // Statuses
     statuses: {
       All: 'Tous',
+      'in-progress': 'En cours',
       'In Progress': 'En cours',
+      pending: 'En attente',
       Pending: 'En attente',
+      incident: 'Incident',
       Incident: 'Incident',
+      cancelled: 'Annulé',
       Cancelled: 'Annulé',
+      completed: 'Terminé',
       Completed: 'Terminé',
       Approved: 'Validé',
       Rejected: 'Rejeté',

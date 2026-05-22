@@ -235,7 +235,7 @@ export default function SuiviMissions() {
     const headers = { Authorization: `Bearer ${token}` }
 
     const loadMissions = (gpsData) => {
-      axios.get('/api/missions', { headers }).then((missionsRes) => {
+      axios.get('/api/missions?limit=0', { headers }).then((missionsRes) => {
         const gpsMap = {}
         if (gpsData) {
           gpsData.forEach(g => {
@@ -283,7 +283,7 @@ export default function SuiviMissions() {
 
     // Poll only missions, preserve lat/lng/gpsId from current state
     const interval = setInterval(() => {
-      axios.get('/api/missions', { headers }).then((missionsRes) => {
+      axios.get('/api/missions?limit=0', { headers }).then((missionsRes) => {
         setMissions(prev => {
           const prevMap = new Map(prev.map(m => [m.id, m]))
           return (missionsRes.data.missions || []).map(m => {

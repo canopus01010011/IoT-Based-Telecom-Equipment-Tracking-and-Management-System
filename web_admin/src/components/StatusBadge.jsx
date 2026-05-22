@@ -1,12 +1,15 @@
 import { useT } from '../context/LanguageContext'
 
 const BADGE_STYLES = {
+  'in-progress': { background: 'rgba(59,130,246,.12)', color: '#60a5fa' },
   'In Progress': { background: 'rgba(59,130,246,.12)', color: '#60a5fa' },
   'En Route':    { background: 'rgba(59,130,246,.12)', color: '#60a5fa' },
   'On Site':     { background: 'rgba(34,197,94,.1)',   color: '#4ade80' },
+  'pending':     { background: 'rgba(234,179,8,.1)',   color: '#fbbf24' },
   'Pending':     { background: 'rgba(234,179,8,.1)',   color: '#fbbf24' },
   'Incident':    { background: 'rgba(239,68,68,.12)',  color: '#f87171' },
   'Cancelled':   { background: 'rgba(148,163,184,.1)', color: '#94a3b8' },
+  'completed':   { background: 'rgba(34,197,94,.1)',   color: '#4ade80' },
   'Completed':   { background: 'rgba(34,197,94,.1)',   color: '#4ade80' },
   'Approved':    { background: 'rgba(34,197,94,.1)',   color: '#4ade80' },
   'Rejected':    { background: 'rgba(239,68,68,.12)',  color: '#f87171' },
