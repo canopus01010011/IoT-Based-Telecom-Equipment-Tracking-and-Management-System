@@ -203,45 +203,23 @@ export default function MapScreen() {
           )
         )}
 
-        {/* Traveled path — GPS history trail or road segment warehouse → container */}
-        {trailCoordinates.length > 1 ? (
+        {/* Traveled path — GPS history trail (only if route exists) */}
+        {trailCoordinates.length > 1 && (
           <Polyline
             coordinates={[warehouse, ...trailCoordinates]}
             strokeColor="#3b82f6"
             strokeWidth={5}
           />
-        ) : (
-          iotCoordinate && (
-            <RoadDirections
-              origin={warehouse}
-              destination={iotCoordinate}
-              strokeColor="#3b82f6"
-              strokeWidth={5}
-            />
-          )
         )}
 
-        {/* Remaining path — slice GPX from current position or Google directions */}
-        {iotCoordinate &&
-          destination &&
-          (remainingGpxRoute.length > 1 ? (
-            <Polyline
-              coordinates={remainingGpxRoute}
-              strokeColor="#f97316"
-              strokeWidth={5}
-            />
-          ) : (
-            <RoadDirections
-              origin={iotCoordinate}
-              destination={destination}
-              strokeColor="#f97316"
-              strokeWidth={5}
-              onReady={(km, min) => {
-                setDistance(km.toFixed(1) + " km");
-                setDuration(min + " min");
-              }}
-            />
-          ))}
+        {/* Remaining path — slice GPX from current position (only if route exists) */}
+        {iotCoordinate && destination && remainingGpxRoute.length > 1 && (
+          <Polyline
+            coordinates={remainingGpxRoute}
+            strokeColor="#f97316"
+            strokeWidth={5}
+          />
+        )}
       </MapView>
 
       <View style={styles.card}>

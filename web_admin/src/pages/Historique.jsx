@@ -8,18 +8,21 @@ import DataTable   from '../components/DataTable'
 import { useT }    from '../context/LanguageContext'
 
 const MOCK = [
-  { id:1, ref:'MSN-087', site:'BTS Bab Ezzouar',  driver:'K. Benali',  equip:'Fiber + Antenna', date:'04/12/2024', statut:'completed'   },
-  { id:2, ref:'MSN-086', site:'Kouba North Site',  driver:'A. Hamid',   equip:'Network Cabling', date:'04/11/2024', statut:'in-progress' },
-  { id:3, ref:'MSN-085', site:'Rouiba Tower',      driver:'M. Saadi',   equip:'Antenna / Tower', date:'04/10/2024', statut:'incident'    },
-  { id:4, ref:'MSN-084', site:'Dar El Beida',      driver:'K. Benali',  equip:'Generator',       date:'04/09/2024', statut:'cancelled'   },
-  { id:5, ref:'MSN-083', site:'Hussein Dey',       driver:'O. Meziane', equip:'Site A/C',        date:'04/08/2024', statut:'completed'   },
-  { id:6, ref:'MSN-082', site:'Hydra Site',        driver:'A. Hamid',   equip:'Fiber Optics',    date:'04/07/2024', statut:'completed'   },
-  { id:7, ref:'MSN-081', site:'BTS Bordj',         driver:'M. Saadi',   equip:'Network Cabling', date:'04/06/2024', statut:'pending'     },
-  { id:8, ref:'MSN-080', site:'Baraki Tower',      driver:'K. Benali',  equip:'4G Antenna',      date:'04/05/2024', statut:'completed'   },
+  { id:1, ref:'MSN-087', site:'BTS Bab Ezzouar',  driver:'K. Benali',  equip:'Fiber + Antenna', date:'04/12/2024', statut:'Completed'   },
+  { id:2, ref:'MSN-086', site:'Kouba North Site',  driver:'A. Hamid',   equip:'Network Cabling', date:'04/11/2024', statut:'In Progress' },
+  { id:3, ref:'MSN-085', site:'Rouiba Tower',      driver:'M. Saadi',   equip:'Antenna / Tower', date:'04/10/2024', statut:'Incident'    },
+  { id:4, ref:'MSN-084', site:'Dar El Beida',      driver:'K. Benali',  equip:'Generator',       date:'04/09/2024', statut:'Cancelled'   },
+  { id:5, ref:'MSN-083', site:'Hussein Dey',       driver:'O. Meziane', equip:'Site A/C',        date:'04/08/2024', statut:'Completed'   },
+  { id:6, ref:'MSN-082', site:'Hydra Site',        driver:'A. Hamid',   equip:'Fiber Optics',    date:'04/07/2024', statut:'Completed'   },
+  { id:7, ref:'MSN-081', site:'BTS Bordj',         driver:'M. Saadi',   equip:'Network Cabling', date:'04/06/2024', statut:'Pending'     },
+  { id:8, ref:'MSN-080', site:'Baraki Tower',      driver:'K. Benali',  equip:'4G Antenna',      date:'04/05/2024', statut:'Completed'   },
 ]
 
-const STATUS_FILTERS = ['All', 'Pending', 'In Progress', 'Completed']
-const FILTER_TO_API = { 'Pending': 'pending', 'In Progress': 'in-progress', 'Completed': 'completed' }
+const FILTER_TO_API = {
+  'All': 'All', 'completed': 'completed', 'in-progress': 'in-progress',
+  'pending': 'pending', 'incident': 'incident', 'cancelled': 'cancelled',
+}
+const STATUS_FILTERS = Object.keys(FILTER_TO_API)
 const COLS = '.7fr 1.3fr 1fr 1.3fr .8fr .9fr'
 const PER_PAGE = 15
 
@@ -47,8 +50,8 @@ export default function Historique() {
   }, [])
 
   const filtered = missions.filter(m => {
-    const apiStatus = FILTER_TO_API[filtre]
-    const matchF = filtre === 'All' || m.statut === apiStatus
+    const apiFiltre = FILTER_TO_API[filtre]
+    const matchF = filtre === 'All' || m.statut === apiFiltre
     const matchS = m.site?.toLowerCase().includes(search.toLowerCase()) ||
                    m.driver?.toLowerCase().includes(search.toLowerCase()) ||
                    m.ref?.toLowerCase().includes(search.toLowerCase())
@@ -60,9 +63,9 @@ export default function Historique() {
 
   const stats = {
     total:    missions.length,
-    termines: missions.filter(m => m.statut === 'completed').length,
-    incidents:missions.filter(m => m.statut === 'incident' || m.statut === 'Incident').length,
-    annules:  missions.filter(m => m.statut === 'cancelled' || m.statut === 'Cancelled').length,
+    termines: missions.filter(m => m.statut === 'Completed').length,
+    incidents:missions.filter(m => m.statut === 'Incident').length,
+    annules:  missions.filter(m => m.statut === 'Cancelled').length,
   }
 
   return (
@@ -88,15 +91,14 @@ export default function Historique() {
           cols={COLS}
           isEmpty={displayed.length === 0}
           empty={t.noMissionsFound}
-          flex
         >
           {displayed.map(m => (
-            <div key={m.id} style={{ display:'grid', gridTemplateColumns: COLS, padding:'12px 16px', fontSize:12, color:'#cbd5e1', borderBottom:'0.5px solid rgba(255,255,255,.04)', alignItems:'center' }}>
+            <div key={m.id} style={{ display:'grid', gridTemplateColumns: COLS, padding:'12px 16px', fontSize:12, color:'var(--text-table)', borderBottom:'0.5px solid var(--border-row)', alignItems:'center' }}>
               <span style={{ color:'#60a5fa', fontWeight:500 }}>{m.ref}</span>
               <span>{m.site}</span>
-              <span style={{ color:'rgba(148,163,184,.7)' }}>{m.driver}</span>
-              <span style={{ color:'rgba(148,163,184,.5)', fontSize:11 }}>{m.equip}</span>
-              <span style={{ color:'rgba(148,163,184,.5)', fontSize:11 }}>{m.date}</span>
+              <span style={{ color:'var(--text-secondary)' }}>{m.driver}</span>
+              <span style={{ color:'var(--text-muted)', fontSize:11 }}>{m.equip}</span>
+              <span style={{ color:'var(--text-muted)', fontSize:11 }}>{m.date}</span>
               <StatusBadge statut={m.statut} />
             </div>
           ))}
@@ -107,7 +109,7 @@ export default function Historique() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:16 }}>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
             <button key={p} onClick={() => setPage(p)}
-              style={{ width:32, height:32, borderRadius:7, fontSize:12, background: p === page ? '#1d4ed8' : 'rgba(59,130,246,.08)', border: p === page ? 'none' : '1px solid rgba(59,130,246,.15)', color: p === page ? '#fff' : 'rgba(148,163,184,.6)', cursor:'pointer' }}>
+              style={{ width:32, height:32, borderRadius:7, fontSize:12, background: p === page ? '#1d4ed8' : 'var(--bg-accent)', border: p === page ? 'none' : '1px solid var(--border-default)', color: p === page ? '#fff' : 'var(--text-secondary)', cursor:'pointer' }}>
               {p}
             </button>
           ))}

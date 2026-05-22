@@ -6,8 +6,8 @@ import FormCard    from '../components/FormCard'
 import StatusBadge from '../components/StatusBadge'
 import { useT }    from '../context/LanguageContext'
 
-const lbl = { fontSize:11, color:'rgba(148,163,184,.5)', marginBottom:3 }
-const val = { fontSize:13, color:'#e2e8f0' }
+const lbl = { fontSize:11, color:'var(--text-muted)', marginBottom:3 }
+const val = { fontSize:13, color:'var(--text-primary)' }
 
 export default function RapportDetail() {
   const t        = useT()
@@ -68,9 +68,9 @@ export default function RapportDetail() {
   }
 
   if (!rapport) return (
-    <div className="flex min-h-screen" style={{ background:'#0a0f1e' }}>
+    <div className="flex min-h-screen" style={{ background:'var(--bg-page)' }}>
       <div className="flex-1 flex items-center justify-center">
-        <p style={{ color:'rgba(148,163,184,.4)', fontSize:13 }}>{t.loading}</p>
+        <p style={{ color:'var(--text-muted)', fontSize:13 }}>{t.loading}</p>
       </div>
     </div>
   )
@@ -126,7 +126,7 @@ export default function RapportDetail() {
               ? rapport.materiel.map(m => (
                   <span key={m} style={{ background:'rgba(59,130,246,.08)', border:'0.5px solid rgba(59,130,246,.2)', borderRadius:6, padding:'3px 10px', fontSize:11, color:'#93c5fd' }}>{m}</span>
                 ))
-              : <span style={{ fontSize:11, color:'rgba(148,163,184,.4)' }}>—</span>}
+              : <span style={{ fontSize:11, color:'var(--text-muted)' }}>—</span>}
           </div>
         </div>
       </FormCard>
@@ -136,7 +136,7 @@ export default function RapportDetail() {
           <div className="grid grid-cols-3 gap-3">
             {rapport.photos.map((url, i) => (
               <a key={i} href={url} target="_blank" rel="noopener noreferrer" style={{ display:'block' }}>
-                <div style={{ background:'#0d1426', border:'0.5px solid rgba(59,130,246,.15)', borderRadius:8, height:80, overflow:'hidden', cursor:'pointer' }}>
+                <div style={{ background:'var(--bg-sub)', border:'0.5px solid rgba(59,130,246,.15)', borderRadius:8, height:80, overflow:'hidden', cursor:'pointer' }}>
                   <img src={url} alt={`Photo ${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover' }}
                     onError={e => { e.target.style.display='none'; e.target.parentElement.style.display='flex'; e.target.parentElement.style.alignItems='center'; e.target.parentElement.style.justifyContent='center'; e.target.parentElement.innerHTML='📷'; e.target.parentElement.style.fontSize='20px' }} />
                 </div>
@@ -156,7 +156,7 @@ export default function RapportDetail() {
           onChange={e => setComment(e.target.value)}
           placeholder={t.commentPlaceholder}
           rows={3}
-          style={{ width:'100%', background:'#0d1426', border:'0.5px solid rgba(59,130,246,.25)', borderRadius:7, padding:'10px 12px', fontSize:13, color:'#e2e8f0', outline:'none', resize:'vertical', marginBottom:14 }}
+          style={{ width:'100%', background:'var(--bg-input)', border:'0.5px solid var(--border-strong)', borderRadius:7, padding:'10px 12px', fontSize:13, color:'var(--text-primary)', outline:'none', resize:'vertical', marginBottom:14 }}
         />
         <div className="flex gap-3">
           <button onClick={() => handleAction('Approved')} disabled={loading || rapport.statut === 'completed'}
@@ -168,7 +168,7 @@ export default function RapportDetail() {
             {t.reject}
           </button>
           <button onClick={() => navigate('/dashboard/rapports')}
-            style={{ background:'transparent', border:'0.5px solid rgba(148,163,184,.2)', color:'rgba(148,163,184,.6)', borderRadius:8, padding:'9px 20px', fontSize:13, cursor:'pointer' }}>
+            style={{ background:'transparent', border:'0.5px solid var(--border-subtle)', color:'var(--text-secondary)', borderRadius:8, padding:'9px 20px', fontSize:13, cursor:'pointer' }}>
             {t.back}
           </button>
         </div>

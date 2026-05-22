@@ -58,14 +58,14 @@ export default function Landing() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#070c18', color: '#e2e8f0', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-page)', color: 'var(--text-primary)', overflow: 'hidden' }}>
 
       {/* Ambient glow */}
       <div style={{ position: 'fixed', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: 700, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(59,130,246,.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', bottom: '-10%', right: '-10%', width: 500, height: 400, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(99,102,241,.08) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
 
       {/* Nav */}
-      <nav style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', height: 66, borderBottom: '1px solid rgba(59,130,246,.1)', background: 'rgba(7,12,24,.85)', backdropFilter: 'blur(12px)' }}>
+      <nav style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', height: 66, borderBottom: '1px solid rgba(59,130,246,.1)', background: 'var(--bg-nav)', backdropFilter: 'blur(12px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 38, height: 38, borderRadius: 10, overflow: 'hidden', background: 'rgba(59,130,246,.15)', flexShrink: 0 }}>
             <img src={`data:image/png;base64,${logo}`} alt="ErcTrac" style={{ width: 38, height: 38, objectFit: 'cover', display: 'block' }} />
@@ -74,13 +74,13 @@ export default function Landing() {
             <p style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.2 }}>
               Erc<span style={{ color: '#3b82f6' }}>Trac</span>
             </p>
-            <p style={{ fontSize: 10, color: 'rgba(148,163,184,.4)' }}>{t.telecomAdmin}</p>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)' }}>{t.telecomAdmin}</p>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={() => navigate('/login')}
-            style={{ background: 'transparent', color: 'rgba(148,163,184,.7)', border: '1px solid rgba(59,130,246,.2)', padding: '8px 20px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+            style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid rgba(59,130,246,.2)', padding: '8px 20px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
             {t.signInBtn}
           </button>
           <button onClick={() => navigate('/login')}
@@ -103,7 +103,7 @@ export default function Landing() {
           <span style={{ color: '#3b82f6' }}>{t.landingTitle.split(' ').slice(4).join(' ')}</span>
         </h1>
 
-        <p style={{ fontSize: 15, color: 'rgba(148,163,184,.6)', maxWidth: 480, lineHeight: 1.8, marginBottom: 40 }}>
+        <p style={{ fontSize: 15, color: 'var(--text-secondary)', maxWidth: 480, lineHeight: 1.8, marginBottom: 40 }}>
           {t.landingSubtitle}
         </p>
 
@@ -120,9 +120,9 @@ export default function Landing() {
         {/* Stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, background: 'rgba(59,130,246,.1)', border: '1px solid rgba(59,130,246,.15)', borderRadius: 14, overflow: 'hidden', width: '100%', maxWidth: 640, marginBottom: 72 }}>
           {stats.map((s, i) => (
-            <div key={i} style={{ background: '#0a0f1e', padding: '20px 16px', textAlign: 'center' }}>
-              <p style={{ fontSize: 26, fontWeight: 800, color: '#e2e8f0', letterSpacing: '-0.5px', marginBottom: 4 }}>{s.value}</p>
-              <p style={{ fontSize: 11, color: 'rgba(148,163,184,.45)' }}>{s.label}</p>
+            <div key={i} style={{ background: 'var(--bg-sub)', padding: '20px 16px', textAlign: 'center' }}>
+              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: 4 }}>{s.value}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -132,13 +132,13 @@ export default function Landing() {
           {featureData.map((f, i) => {
             const feat = features[i]
             return (
-              <div key={i} style={{ background: '#0d1426', border: `1px solid ${feat.border}`, borderRadius: 14, padding: '24px 20px', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
+              <div key={i} style={{ background: 'var(--bg-sub)', border: `1px solid ${feat.border}`, borderRadius: 14, padding: '24px 20px', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80, borderRadius: '0 14px 0 100%', background: feat.bg, opacity: 0.5 }} />
                 <div style={{ width: 44, height: 44, borderRadius: 11, background: feat.bg, border: `1px solid ${feat.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: feat.color, marginBottom: 16 }}>
                   {feat.icon}
                 </div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 8, letterSpacing: '-0.2px' }}>{f.title}</p>
-                <p style={{ fontSize: 12, color: 'rgba(148,163,184,.5)', lineHeight: 1.7 }}>{f.desc}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: '-0.2px' }}>{f.title}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.7 }}>{f.desc}</p>
               </div>
             )
           })}
@@ -146,7 +146,7 @@ export default function Landing() {
       </div>
 
       {/* Footer */}
-      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '20px', borderTop: '1px solid rgba(59,130,246,.08)', fontSize: 11, color: 'rgba(148,163,184,.25)' }}>
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '20px', borderTop: '1px solid rgba(59,130,246,.08)', fontSize: 11, color: 'var(--text-subtle)' }}>
         © ErcTrac — Telecom Platform
       </div>
     </div>
