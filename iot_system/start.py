@@ -1,7 +1,7 @@
 """
 Run both services in one Railway deployment:
-  - HTTP route API (for backend / mobile map)
-  - GPS MQTT simulator (optional — needs BROKER_HOST / BROKER_PORT)
+  - HTTP route API + simulation control (route_server.py)
+  - GPS MQTT simulator (always runs, waits for start/stop commands)
 """
 import os
 import subprocess
@@ -11,17 +11,9 @@ import time
 
 def main() -> None:
     port = os.getenv("PORT", "8001")
-    routes_only = os.getenv("IOT_ROUTES_ONLY", "").lower() in ("1", "true", "yes")
     sim_only = os.getenv("IOT_SIMULATOR_ONLY", "").lower() in ("1", "true", "yes")
-    # Default: routes API only. Set IOT_RUN_SIMULATOR=true to enable MQTT GPS.
-    run_simulator = os.getenv("IOT_RUN_SIMULATOR", "false").lower() in (
-        "1",
-        "true",
-        "yes",
-    )
 
     procs: list[tuple[str, subprocess.Popen]] = []
-    simulator_proc: subprocess.Popen | None = None
 
     if not sim_only:
         print(f"Starting route API on port {port}...")
@@ -39,12 +31,9 @@ def main() -> None:
         )
         procs.append(("routes-api", api_proc))
 
-    if not routes_only and run_simulator:
-        print("Starting GPS simulator...")
-        simulator_proc = subprocess.Popen([sys.executable, "gps_simulator.py"])
-        procs.append(("gps-simulator", simulator_proc))
-    elif not routes_only:
-        print("GPS simulator disabled (IOT_RUN_SIMULATOR=false).")
+    print("Starting GPS simulator (waiting for commands)...")
+    sim_proc = subprocess.Popen([sys.executable, "gps_simulator.py"])
+    procs.append(("gps-simulator", sim_proc))
 
     if not procs:
         print("Nothing to run.")
@@ -63,7 +52,6 @@ def main() -> None:
                         "Route API keeps running.",
                     )
                     procs.remove((name, proc))
-                    simulator_proc = None
             time.sleep(2)
     except KeyboardInterrupt:
         for _, proc in procs:

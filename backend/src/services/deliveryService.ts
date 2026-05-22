@@ -1,6 +1,9 @@
 import { Op } from 'sequelize';
-import { Confirmation, Container, Mission, Report, Site, User } from '../models/index.js';
+import { Confirmation, Container, GPSDevice, Mission, Report, Site, User } from '../models/index.js';
 import { NotificationService } from './notificationService.js';
+import axios from 'axios';
+
+const IOT_BASE_URL = process.env.IOT_BASE_URL || 'https://iot-based-telecom-equipment-tracking-and-managem-production.up.railway.app';
 
 async function getAdminIds(): Promise<string[]> {
   const admins = await User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
@@ -100,6 +103,23 @@ export class DeliveryService {
     });
     await mission.update({ status: 'in-progress', start_date: new Date() });
 
+    // Trigger IoT GPS simulation for this mission's container
+    if (mission.container_id) {
+      (async () => {
+        try {
+          const gpsDevice = await GPSDevice.findOne({
+            where: { container_id: mission.container_id },
+          });
+          if (gpsDevice) {
+            await axios.post(`${IOT_BASE_URL}/simulation/start/${gpsDevice.device_serial_number}`, {}, { timeout: 5000 });
+            console.log(`IoT simulation started for device ${gpsDevice.device_serial_number}`);
+          }
+        } catch (err: any) {
+          console.error(`Failed to trigger IoT simulation for ${mission.id}:`, err.message);
+        }
+      })();
+    }
+
     const reloaded = await Mission.findByPk(mission.id, {
       include: [
         { model: User, as: 'driver', attributes: ['full_name'] },
@@ -137,6 +157,23 @@ export class DeliveryService {
     }
     if (confirmation.technician_confirm_time) {
       throw new Error('Technician already confirmed this mission');
+    }
+
+    // Stop IoT GPS simulation for this mission's container
+    if (mission.container_id) {
+      (async () => {
+        try {
+          const gpsDevice = await GPSDevice.findOne({
+            where: { container_id: mission.container_id },
+          });
+          if (gpsDevice) {
+            await axios.post(`${IOT_BASE_URL}/simulation/stop/${gpsDevice.device_serial_number}`, {}, { timeout: 5000 });
+            console.log(`IoT simulation stopped for device ${gpsDevice.device_serial_number}`);
+          }
+        } catch (err: any) {
+          console.error(`Failed to stop IoT simulation for ${mission.id}:`, err.message);
+        }
+      })();
     }
 
     await confirmation.update({
