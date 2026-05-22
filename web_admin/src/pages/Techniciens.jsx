@@ -68,7 +68,7 @@ export default function Techniciens() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={t.searchTechnician}
-          style={{ background:'#0d1426', border:'1px solid rgba(59,130,246,.2)', borderRadius:8, padding:'9px 14px', fontSize:13, color:'#e2e8f0', outline:'none', width:300 }}
+          style={{ background:'var(--bg-input)', border:'1px solid var(--border-default)', borderRadius:8, padding:'9px 14px', fontSize:13, color:'var(--text-primary)', outline:'none', width:300 }}
         />
       </div>
 
@@ -76,7 +76,7 @@ export default function Techniciens() {
         {displayed.map((d, i) => {
           const sp = specialtyColors[d.specialite] ?? { bg: 'rgba(59,130,246,.1)', color: '#60a5fa' }
           return (
-            <div key={d.id} style={{ background:'#0d1426', border:'1px solid rgba(59,130,246,.12)', borderRadius:12, padding:'20px' }}>
+            <div key={d.id} style={{ background:'var(--bg-sub)', border:'1px solid var(--border-card)', borderRadius:12, padding:'20px' }}>
               <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
                 <div style={{
                   width:46, height:46, borderRadius:'50%', flexShrink:0,
@@ -87,15 +87,15 @@ export default function Techniciens() {
                   {d.nom?.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
                 </div>
                 <div style={{ flex:1 }}>
-                  <p style={{ fontSize:14, fontWeight:500, color:'#e2e8f0' }}>{d.nom}</p>
-                  <p style={{ fontSize:11, color:'rgba(148,163,184,.5)', marginTop:2 }}>{d.telephone}</p>
+                  <p style={{ fontSize:14, fontWeight:500, color:'var(--text-primary)' }}>{d.nom}</p>
+                  <p style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{d.telephone}</p>
                 </div>
                 <StatusBadge statut={d.statut} />
               </div>
 
-              <div style={{ borderTop:'1px solid rgba(59,130,246,.08)', paddingTop:14, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div style={{ borderTop:'1px solid var(--border-subtle)', paddingTop:14, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                 <div>
-                  <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:5 }}>{t.specialty}</p>
+                  <p style={{ fontSize:10, color:'var(--text-muted)', marginBottom:5 }}>{t.specialty}</p>
                   <span style={{
                     fontSize:11, fontWeight:500, padding:'3px 10px', borderRadius:20,
                     background: sp.bg, color: sp.color,
@@ -105,7 +105,7 @@ export default function Techniciens() {
                   </span>
                 </div>
                 <div style={{ textAlign:'right' }}>
-                  <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginBottom:4 }}>{t.totalMissionsLabel}</p>
+                  <p style={{ fontSize:10, color:'var(--text-muted)', marginBottom:4 }}>{t.totalMissionsLabel}</p>
                   <p style={{ fontSize:20, fontWeight:700, color:'#60a5fa' }}>{d.missions}</p>
                 </div>
               </div>

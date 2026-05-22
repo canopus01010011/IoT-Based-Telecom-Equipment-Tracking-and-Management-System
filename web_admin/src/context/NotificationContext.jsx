@@ -1,71 +1,9 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import axios from 'axios'
 
 const NotificationContext = createContext(null)
 
-// type: 'departure' | 'arrival' | 'incident' | 'completed' | 'report' | 'work_start' | 'work_done' | 'unavailable' | 'available'
-const MOCK_NOTIFS = [
-  {
-    id: 1, read: false, type: 'departure', role: 'driver',
-    name: 'Karim Benali', vehicule: 'Van — 16-DZ-142',
-    site: 'BTS Bab Ezzouar', ref: 'MSN-091', time: '08:42',
-  },
-  {
-    id: 2, read: false, type: 'report', role: 'technician',
-    name: 'Youcef Amrani', specialite: 'Fiber Optics',
-    site: 'BTS Bab Ezzouar', ref: 'MSN-091', time: '08:30',
-  },
-  {
-    id: 3, read: false, type: 'arrival', role: 'driver',
-    name: 'Ali Hamid', vehicule: 'Truck — 09-DZ-871',
-    site: 'Kouba Tower', ref: 'MSN-090', time: '07:58',
-  },
-  {
-    id: 4, read: false, type: 'work_start', role: 'technician',
-    name: 'Nassim Boulifa', specialite: 'Antenna / Tower',
-    site: 'Kouba Tower', ref: 'MSN-090', time: '08:05',
-  },
-  {
-    id: 5, read: false, type: 'incident', role: 'driver',
-    name: 'Mohamed Saadi', vehicule: 'Pick-up — 23-DZ-305',
-    site: 'Rouiba Tower', ref: 'MSN-089', time: '07:20',
-  },
-  {
-    id: 6, read: false, type: 'incident', role: 'technician',
-    name: 'Djamel Khelif', specialite: 'Network Cabling',
-    site: 'Rouiba Tower', ref: 'MSN-089', time: '07:25',
-  },
-  {
-    id: 7, read: true, type: 'work_done', role: 'technician',
-    name: 'Amine Cherif', specialite: 'Multi-skilled',
-    site: 'Hussein Dey', ref: 'MSN-083', time: '06:10',
-  },
-  {
-    id: 8, read: true, type: 'completed', role: 'driver',
-    name: 'Omar Meziane', vehicule: 'Van — 07-DZ-490',
-    site: 'Hussein Dey', ref: 'MSN-083', time: '06:00',
-  },
-  {
-    id: 9, read: true, type: 'unavailable', role: 'driver',
-    name: 'Yacine Brahim', vehicule: 'Truck — 14-DZ-228',
-    site: null, ref: null, time: 'Yesterday',
-  },
-  {
-    id: 10, read: true, type: 'available', role: 'technician',
-    name: 'Riad Ouali', specialite: 'Generator',
-    site: null, ref: null, time: 'Yesterday',
-  },
-  {
-    id: 11, read: true, type: 'departure', role: 'driver',
-    name: 'Karim Benali', vehicule: 'Van — 16-DZ-142',
-    site: 'Hydra Site', ref: 'MSN-082', time: 'Yesterday',
-  },
-  {
-    id: 12, read: true, type: 'report', role: 'technician',
-    name: 'Sofiane Tebbal', specialite: 'Site Air Conditioning',
-    site: 'Dar El Beida', ref: 'MSN-088', time: 'Yesterday',
-  },
-]
-
+// ── Notification types & display config ────────────────────────────────────────
 export const NOTIF_CONFIG = {
   departure:   { label: 'Departed for route',        color: '#3b82f6',  bg: 'rgba(59,130,246,.12)',  icon: 'truck'    },
   arrival:     { label: 'Arrived on site',            color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'map-pin'  },
@@ -78,21 +16,203 @@ export const NOTIF_CONFIG = {
   available:   { label: 'Now available',              color: '#4ade80',  bg: 'rgba(34,197,94,.1)',    icon: 'user-ok'  },
 }
 
-export function NotificationProvider({ children }) {
-  const [notifs, setNotifs] = useState(MOCK_NOTIFS)
+// ── Links by notification type ─────────────────────────────────────────────────
+// report type uses the missionId: /dashboard/rapports/:id
+// everything else → tracking or drivers page
+const typeLink = (type, missionId) => {
+  if (type === 'report')      return missionId ? `/dashboard/rapports/${missionId}` : '/dashboard/rapports'
+  if (type === 'unavailable') return '/dashboard/drivers'
+  if (type === 'available')   return '/dashboard/drivers'
+  return '/dashboard/suivi'
+}
 
+// ── Seed mock notifications (with link field) ──────────────────────────────────
+const SEED_NOTIFS = [
+  {
+    id: 1, read: false, type: 'departure', role: 'driver',
+    name: 'Karim Benali', vehicule: 'Van — 16-DZ-142',
+    site: 'BTS Bab Ezzouar', ref: 'MSN-091', time: '08:42',
+    link: '/dashboard/suivi',
+  },
+  {
+    id: 2, read: false, type: 'report', role: 'technician',
+    name: 'Youcef Amrani', specialite: 'Fiber Optics',
+    site: 'BTS Bab Ezzouar', ref: 'MSN-091', time: '08:30',
+    link: '/dashboard/rapports',
+  },
+  {
+    id: 3, read: false, type: 'arrival', role: 'driver',
+    name: 'Ali Hamid', vehicule: 'Truck — 09-DZ-871',
+    site: 'Kouba Tower', ref: 'MSN-090', time: '07:58',
+    link: '/dashboard/suivi',
+  },
+  {
+    id: 4, read: false, type: 'work_start', role: 'technician',
+    name: 'Nassim Boulifa', specialite: 'Antenna / Tower',
+    site: 'Kouba Tower', ref: 'MSN-090', time: '08:05',
+    link: '/dashboard/suivi',
+  },
+  {
+    id: 5, read: false, type: 'incident', role: 'driver',
+    name: 'Mohamed Saadi', vehicule: 'Pick-up — 23-DZ-305',
+    site: 'Rouiba Tower', ref: 'MSN-089', time: '07:20',
+    link: '/dashboard/suivi',
+  },
+  {
+    id: 6, read: false, type: 'incident', role: 'technician',
+    name: 'Djamel Khelif', specialite: 'Network Cabling',
+    site: 'Rouiba Tower', ref: 'MSN-089', time: '07:25',
+    link: '/dashboard/suivi',
+  },
+  {
+    id: 7, read: true, type: 'work_done', role: 'technician',
+    name: 'Amine Cherif', specialite: 'Multi-skilled',
+    site: 'Hussein Dey', ref: 'MSN-083', time: '06:10',
+    link: '/dashboard/suivi',
+  },
+  {
+    id: 8, read: true, type: 'completed', role: 'driver',
+    name: 'Omar Meziane', vehicule: 'Van — 07-DZ-490',
+    site: 'Hussein Dey', ref: 'MSN-083', time: '06:00',
+    link: '/dashboard/suivi',
+  },
+  {
+    id: 9, read: true, type: 'unavailable', role: 'driver',
+    name: 'Yacine Brahim', vehicule: 'Truck — 14-DZ-228',
+    site: null, ref: null, time: 'Yesterday',
+    link: '/dashboard/drivers',
+  },
+  {
+    id: 10, read: true, type: 'available', role: 'technician',
+    name: 'Riad Ouali', specialite: 'Generator',
+    site: null, ref: null, time: 'Yesterday',
+    link: '/dashboard/drivers',
+  },
+  {
+    id: 11, read: true, type: 'departure', role: 'driver',
+    name: 'Karim Benali', vehicule: 'Van — 16-DZ-142',
+    site: 'Hydra Site', ref: 'MSN-082', time: 'Yesterday',
+    link: '/dashboard/suivi',
+  },
+  {
+    id: 12, read: true, type: 'report', role: 'technician',
+    name: 'Sofiane Tebbal', specialite: 'Site Air Conditioning',
+    site: 'Dar El Beida', ref: 'MSN-088', time: 'Yesterday',
+    link: '/dashboard/rapports',
+  },
+]
+
+// ── Convert a backend mission status change into a notification object ─────────
+let _idCounter = 1000
+const buildMissionNotif = (mission, newStatus) => {
+  const now   = new Date()
+  const time  = now.toTimeString().slice(0, 5)
+  const site  = mission.Site?.name || ''
+  const ref   = String(mission.id)
+  const missionId = mission.id
+
+  let type, role, name, vehicule, specialite
+
+  if (newStatus === 'in-progress') {
+    type = 'departure'; role = 'driver'
+    name = mission.driver?.full_name || 'Driver'
+    vehicule = mission.container_id || ''
+    specialite = ''
+  } else if (newStatus === 'completed') {
+    type = 'completed'; role = 'driver'
+    name = mission.driver?.full_name || 'Driver'
+    vehicule = mission.container_id || ''
+    specialite = ''
+  } else {
+    type = 'work_start'; role = 'technician'
+    name = mission.technician?.full_name || 'Technician'
+    vehicule = ''
+    specialite = mission.technician?.specialite || ''
+  }
+
+  return {
+    id: ++_idCounter,
+    read: false,
+    type, role, name, vehicule, specialite,
+    site, ref, time,
+    missionId,
+    link: typeLink(type, missionId),
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+export function NotificationProvider({ children }) {
+  const [notifs, setNotifs] = useState(SEED_NOTIFS)
+  const prevMissions = useRef(null) // Map<id, status>
+
+  // ── Add a new notification (prepend) ──────────────────────────────────────
+  const addNotif = useCallback((n) => {
+    setNotifs(prev => [n, ...prev])
+  }, [])
+
+  // ── Mark one notification as read ─────────────────────────────────────────
+  const markRead = useCallback((id) => {
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  }, [])
+
+  // ── Mark all as read ──────────────────────────────────────────────────────
   const markAllRead = useCallback(() => {
     setNotifs(prev => prev.map(n => ({ ...n, read: true })))
   }, [])
 
-  const markRead = useCallback((id) => {
-    setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  // ── Poll missions to detect status changes ────────────────────────────────
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    const fetchAndDiff = async () => {
+      try {
+        const res = await axios.get('/api/missions', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const missions = res.data.missions || []
+
+        if (prevMissions.current === null) {
+          // First load — build baseline, do NOT generate notifications
+          const map = new Map()
+          missions.forEach(m => map.set(m.id, m.status))
+          prevMissions.current = map
+          return
+        }
+
+        // Diff with previous state
+        const newNotifs = []
+        missions.forEach(m => {
+          const prevStatus = prevMissions.current.get(m.id)
+          if (prevStatus === undefined) {
+            // New mission appeared
+            if (m.status === 'in-progress') {
+              newNotifs.push(buildMissionNotif(m, 'in-progress'))
+            }
+          } else if (prevStatus !== m.status) {
+            // Status changed
+            newNotifs.push(buildMissionNotif(m, m.status))
+          }
+          prevMissions.current.set(m.id, m.status)
+        })
+
+        if (newNotifs.length > 0) {
+          setNotifs(prev => [...newNotifs, ...prev])
+        }
+      } catch (_) {
+        // backend unavailable — keep existing notifications
+      }
+    }
+
+    fetchAndDiff() // immediate
+    const interval = setInterval(fetchAndDiff, 30_000) // every 30 s
+    return () => clearInterval(interval)
   }, [])
 
   const unreadCount = notifs.filter(n => !n.read).length
 
   return (
-    <NotificationContext.Provider value={{ notifs, unreadCount, markAllRead, markRead }}>
+    <NotificationContext.Provider value={{ notifs, unreadCount, markAllRead, markRead, addNotif }}>
       {children}
     </NotificationContext.Provider>
   )

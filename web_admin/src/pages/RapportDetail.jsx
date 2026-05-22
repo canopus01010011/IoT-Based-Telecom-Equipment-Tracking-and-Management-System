@@ -15,8 +15,8 @@ const MOCK = {
   photos:[1,2,3],
 }
 
-const lbl = { fontSize:11, color:'rgba(148,163,184,.5)', marginBottom:3 }
-const val = { fontSize:13, color:'#e2e8f0' }
+const lbl = { fontSize:11, color:'var(--text-muted)', marginBottom:3 }
+const val = { fontSize:13, color:'var(--text-primary)' }
 
 export default function RapportDetail() {
   const t        = useT()
@@ -63,9 +63,9 @@ export default function RapportDetail() {
   }
 
   if (!rapport) return (
-    <div className="flex min-h-screen" style={{ background:'#0a0f1e' }}>
+    <div className="flex min-h-screen" style={{ background:'var(--bg-page)' }}>
       <div className="flex-1 flex items-center justify-center">
-        <p style={{ color:'rgba(148,163,184,.4)', fontSize:13 }}>{t.loading}</p>
+        <p style={{ color:'var(--text-muted)', fontSize:13 }}>{t.loading}</p>
       </div>
     </div>
   )
@@ -124,7 +124,7 @@ export default function RapportDetail() {
         </div>
         <div>
           <p style={lbl}>{t.issuesIncidents}</p>
-          <p style={{ ...val, color: rapport.incidents ? '#fbbf24' : 'rgba(148,163,184,.4)', marginTop:4 }}>
+          <p style={{ ...val, color: rapport.incidents ? '#fbbf24' : 'var(--text-muted)', marginTop:4 }}>
             {rapport.incidents || t.noIncidents}
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function RapportDetail() {
         <FormCard title={t.sitePhotos}>
           <div className="grid grid-cols-3 gap-3">
             {rapport.photos.map((_, i) => (
-              <div key={i} style={{ background:'#0d1426', border:'0.5px solid rgba(59,130,246,.15)', borderRadius:8, height:80, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'rgba(148,163,184,.4)' }}>
+              <div key={i} style={{ background:'var(--bg-sub)', border:'0.5px solid var(--border-default)', borderRadius:8, height:80, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'var(--text-muted)' }}>
                 📷 Photo {i + 1}
               </div>
             ))}
@@ -148,7 +148,7 @@ export default function RapportDetail() {
           onChange={e => setComment(e.target.value)}
           placeholder={t.commentPlaceholder}
           rows={3}
-          style={{ width:'100%', background:'#0d1426', border:'0.5px solid rgba(59,130,246,.25)', borderRadius:7, padding:'10px 12px', fontSize:13, color:'#e2e8f0', outline:'none', resize:'vertical', marginBottom:14 }}
+          style={{ width:'100%', background:'var(--bg-input)', border:'0.5px solid var(--border-strong)', borderRadius:7, padding:'10px 12px', fontSize:13, color:'var(--text-primary)', outline:'none', resize:'vertical', marginBottom:14 }}
         />
         <div className="flex gap-3">
           <button onClick={() => handleAction('Approved')} disabled={loading}
@@ -160,7 +160,7 @@ export default function RapportDetail() {
             {t.reject}
           </button>
           <button onClick={() => navigate('/dashboard/rapports')}
-            style={{ background:'transparent', border:'0.5px solid rgba(148,163,184,.2)', color:'rgba(148,163,184,.6)', borderRadius:8, padding:'9px 20px', fontSize:13, cursor:'pointer' }}>
+            style={{ background:'transparent', border:'0.5px solid var(--border-subtle)', color:'var(--text-secondary)', borderRadius:8, padding:'9px 20px', fontSize:13, cursor:'pointer' }}>
             {t.back}
           </button>
         </div>

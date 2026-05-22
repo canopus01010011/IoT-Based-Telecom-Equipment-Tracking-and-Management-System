@@ -36,7 +36,7 @@ export default function Login() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#070c18', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-page)', overflow: 'hidden' }}>
 
       {/* Ambient glow */}
       <div style={{ position: 'fixed', top: '-30%', left: '20%', width: 600, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(59,130,246,.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -44,8 +44,8 @@ export default function Login() {
       {/* ── Left branding panel ── */}
       <div style={{
         width: 440, flexShrink: 0, position: 'relative',
-        background: 'linear-gradient(170deg, #080f22 0%, #0a1530 50%, #0c1a3d 100%)',
-        borderRight: '1px solid rgba(59,130,246,.12)',
+        background: 'var(--bg-surface)',
+        borderRight: '1px solid var(--border-subtle)',
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         padding: '44px 40px',
         overflow: 'hidden',
@@ -62,18 +62,18 @@ export default function Login() {
               <img src={`data:image/png;base64,${logo}`} alt="ErcTrac" style={{ width: 44, height: 44, objectFit: 'cover', display: 'block' }} />
             </div>
             <div>
-              <p style={{ fontSize: 18, fontWeight: 700, color: '#e2e8f0', letterSpacing: '-0.4px' }}>
+              <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
                 Erc<span style={{ color: '#3b82f6' }}>Trac</span>
               </p>
-              <p style={{ fontSize: 10, color: 'rgba(148,163,184,.4)' }}>{t.telecomAdmin}</p>
+              <p style={{ fontSize: 10, color: 'var(--text-muted)' }}>{t.telecomAdmin}</p>
             </div>
           </div>
 
-          <h2 style={{ fontSize: 30, fontWeight: 800, color: '#e2e8f0', lineHeight: 1.2, letterSpacing: '-0.8px', marginBottom: 14 }}>
+          <h2 style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2, letterSpacing: '-0.8px', marginBottom: 14 }}>
             The admin platform<br />
             for <span style={{ color: '#3b82f6' }}>telecom missions</span>
           </h2>
-          <p style={{ fontSize: 13, color: 'rgba(148,163,184,.45)', lineHeight: 1.75, marginBottom: 44 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.75, marginBottom: 44 }}>
             Centralize mission creation, live tracking, equipment reports and team management in one place.
           </p>
 
@@ -83,13 +83,13 @@ export default function Login() {
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(59,130,246,.1)', border: '1px solid rgba(59,130,246,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
                   {h.icon}
                 </div>
-                <p style={{ fontSize: 13, color: 'rgba(148,163,184,.65)' }}>{h.text}</p>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{h.text}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p style={{ position: 'relative', zIndex: 1, fontSize: 11, color: 'rgba(148,163,184,.2)' }}>
+        <p style={{ position: 'relative', zIndex: 1, fontSize: 11, color: 'var(--text-subtle)' }}>
           © ErcTrac — Telecom Platform
         </p>
       </div>
@@ -99,27 +99,27 @@ export default function Login() {
         <div style={{ width: '100%', maxWidth: 360 }}>
 
           <div style={{ marginBottom: 36 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#e2e8f0', letterSpacing: '-0.5px', marginBottom: 8 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: 8 }}>
               {t.loginTitle}
             </h1>
-            <p style={{ fontSize: 13, color: 'rgba(148,163,184,.45)' }}>{t.loginSubtitle}</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t.loginSubtitle}</p>
           </div>
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(148,163,184,.5)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {t.emailAddress}
               </label>
               <input
                 type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="admin@erctrac.dz" required
-                style={{ width: '100%', background: '#0d1426', border: '1px solid rgba(59,130,246,.2)', borderRadius: 9, padding: '12px 14px', fontSize: 13, color: '#e2e8f0', outline: 'none' }}
+                style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-default)', borderRadius: 9, padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none' }}
               />
             </div>
 
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(148,163,184,.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {t.password}
                 </label>
                 <span style={{ fontSize: 11, color: 'rgba(96,165,250,.5)', cursor: 'pointer' }}>{t.forgotPassword}</span>
@@ -127,7 +127,7 @@ export default function Login() {
               <input
                 type="password" value={password} onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••" required
-                style={{ width: '100%', background: '#0d1426', border: '1px solid rgba(59,130,246,.2)', borderRadius: 9, padding: '12px 14px', fontSize: 13, color: '#e2e8f0', outline: 'none' }}
+                style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-default)', borderRadius: 9, padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none' }}
               />
             </div>
 
