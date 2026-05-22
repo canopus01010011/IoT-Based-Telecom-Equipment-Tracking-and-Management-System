@@ -1,6 +1,9 @@
 import { Gear } from "@/components/UI/Gear";
 import { colors } from "@/constants/theme";
+import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useMissions } from "@/hooks/useMissions";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
@@ -26,9 +29,11 @@ const { width, height } = Dimensions.get("window");
 
 export default function Dashboard() {
   const router = useRouter();
-  const { missions } = useMissions();
-
-  const notifications = 3;
+  const { t, isRTL } = useLanguage();
+  const { user } = useAuth();
+  const { missions, loading, activeMissions, completedMissions } = useMissions();
+  const { unreadCount: notifications } = useNotifications();
+  const greeting = user?.full_name || user?.email || "User";
 
   return (
     <View style={styles.container}>
@@ -51,8 +56,8 @@ export default function Dashboard() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Guellil Souheil</Text>
+            <Text style={[styles.title, isRTL && styles.rtlText]}>{t("home.welcome")}</Text>
+            <Text style={styles.subtitle}>{greeting}</Text>
           </View>
 
           <Pressable
@@ -71,72 +76,84 @@ export default function Dashboard() {
 
         <View style={styles.statsRow}>
           <StatCard
-            label="Active"
-            value="3"
+            label={t("home.active")}
+            value={String(activeMissions.length)}
             icon={<ClipboardList size={20} color={colors.primary} />}
           />
           <StatCard
-            label="Completed"
-            value="15"
+            label={t("home.completed")}
+            value={String(completedMissions.length)}
             icon={<CheckCircle2 size={20} color={colors.primary} />}
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Active Missions</Text>
+        <Text style={[styles.sectionTitle, isRTL && styles.rtlText]}>{t("home.activeMissions")}</Text>
 
-        {missions.map((m) => (
-          <Pressable
-            key={m.id}
-            style={styles.missionCard}
-            onPress={() =>
-              router.push({
-                pathname: "/screens/mission-details",
-                params: { id: String(m.id) },
-              })
-            }
-          >
-            <Text style={styles.site}>{m.site}</Text>
+        {loading ? (
+          <Text style={styles.loadingText}>{t("common.loadingMissions")}</Text>
+        ) : activeMissions.length === 0 ? (
+          <Text style={styles.loadingText}>{t("common.noMissions")}</Text>
+        ) : (
+          activeMissions.map((m) => (
+              <Pressable
+                key={m.id}
+                style={styles.missionCard}
+                onPress={() =>
+                  router.push({
+                    pathname: "/screens/mission-details",
+                    params: { id: m.id },
+                  })
+                }
+              >
+                <Text style={styles.site}>{m.site}</Text>
 
-            <View style={styles.missionRow}>
-              <Building2 size={16} color="#9ca3af" />
-              <Text style={styles.missionDetail}>{m.company}</Text>
-            </View>
+                <View style={styles.missionRow}>
+                  <Building2 size={16} color="#9ca3af" />
+                  <Text style={styles.missionDetail}>{m.company}</Text>
+                </View>
 
-            <View style={styles.missionRow}>
-              <MapPin size={16} color="#9ca3af" />
-              <Text style={styles.missionDetail}>{m.address}</Text>
-            </View>
+                <View style={styles.missionRow}>
+                  <MapPin size={16} color="#9ca3af" />
+                  <Text style={styles.missionDetail}>{m.address}</Text>
+                </View>
 
-            <View style={styles.missionRow}>
-              <ClockIcon size={16} color="#9ca3af" />
-              <Text style={styles.missionDetail}>{m.time}</Text>
-            </View>
+                <View style={styles.missionRow}>
+                  <ClockIcon size={16} color="#9ca3af" />
+                  <Text style={styles.missionDetail}>{m.time}</Text>
+                </View>
 
-            <View style={styles.missionRow}>
-              <PackageIcon size={16} color="#9ca3af" />
-              <Text style={styles.missionDetail}>{m.items} Items</Text>
-            </View>
+                <View style={styles.missionRow}>
+                  <PackageIcon size={16} color="#9ca3af" />
+                  <Text style={styles.missionDetail}>{m.items} {t("home.items")}</Text>
+                </View>
 
-            <View
-              style={[
-                styles.statusBadge,
-                m.status === "Completed"
-                  ? styles.completed
-                  : m.status === "Pending"
-                    ? styles.pending
-                    : styles.inProgress,
-              ]}
-            >
-              <Text style={styles.statusText}>{m.status}</Text>
-            </View>
-          </Pressable>
-        ))}
+                <View
+                  style={[
+                    styles.statusBadge,
+                    m.statusRaw === "completed"
+                      ? styles.completed
+                      : m.statusRaw === "pending"
+                        ? styles.pending
+                        : styles.inProgress,
+                  ]}
+                >
+                  <Text style={styles.statusText}>{m.status}</Text>
+                </View>
+              </Pressable>
+            ))
+        )}
       </ScrollView>
     </View>
   );
 }
 
-function StatCard({ label, value, icon }) {
+type StatCardProps = {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+};
+
+function StatCard({ label, value, icon }: StatCardProps) {
   return (
     <View style={styles.statCard}>
       {icon}
@@ -299,5 +316,14 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     fontSize: 12,
     marginTop: 4,
+  },
+
+  loadingText: {
+    color: "#9ca3af",
+    textAlign: "center",
+    marginTop: 20,
+  },
+  rtlText: {
+    textAlign: "right",
   },
 });

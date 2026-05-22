@@ -1,3 +1,5 @@
+import { useLanguage } from "@/context/LanguageContext";
+import { useOffline } from "@/context/OfflineContext";
 import { CameraView, PermissionResponse } from "expo-camera";
 import { RefreshCcw } from "lucide-react-native";
 import React from "react";
@@ -12,6 +14,7 @@ type QRScannerViewProps = {
   handleScan: ({ data }: { data: string }) => void;
   reset: () => void;
   handleAction: () => void;
+  confirming?: boolean;
   role: "technician" | "driver";
 };
 
@@ -24,8 +27,13 @@ export function QRScannerView({
   handleScan,
   reset,
   handleAction,
+  confirming = false,
   role,
+  queuedOffline = false,
 }: QRScannerViewProps) {
+  const { t, isRTL } = useLanguage();
+  const { isOnline } = useOffline();
+
   if (!permission) {
     return (
       <View style={styles.fullCenter}>
@@ -52,18 +60,18 @@ export function QRScannerView({
     <View style={styles.container}>
       <CameraView
         style={StyleSheet.absoluteFillObject}
-        onBarCodeScanned={
+        onBarcodeScanned={
           scanned ? undefined : ({ data }) => handleScan({ data })
         }
         barcodeScannerSettings={{
-          barCodeTypes: ["qr"],
+          barcodeTypes: ["qr"],
         }}
       />
 
       <View style={styles.overlay}>
         <View style={styles.statusBadge}>
           <Text style={styles.statusText}>
-            {scanned ? "QR scanned" : "Scanning for QR code"}
+            {scanned ? t("qr.scanned") : t("qr.scanning")}
           </Text>
           {scanError ? <Text style={styles.errorText}>{scanError}</Text> : null}
         </View>
@@ -84,9 +92,13 @@ export function QRScannerView({
         </View>
 
         <View style={styles.overlayBottom}>
-          <Text style={styles.title}>Scan QR Code</Text>
-          <Text style={styles.subtitle}>
-            Place the code inside the glowing frame.
+          <Text style={styles.title}>{t("qr.scan")}</Text>
+          <Text style={[styles.subtitle, isRTL && styles.rtlText]}>
+            {!isOnline
+              ? `${t("offline.banner")} — ${role === "driver" ? t("qr.driverHint") : t("qr.techHint")}`
+              : role === "driver"
+                ? t("qr.driverHint")
+                : t("qr.techHint")}
           </Text>
         </View>
       </View>
@@ -94,12 +106,23 @@ export function QRScannerView({
       <View style={styles.card}>
         {scanned && data ? (
           <>
-            <Text style={styles.cardTitle}>Mission Details</Text>
-            <Text style={styles.cardText}>Mission ID: {data.missionId}</Text>
-            <Text style={styles.cardText}>Site: {data.site || "Unknown"}</Text>
-            <Text style={styles.cardText}>
-              Location: {data.location || "Unknown"}
+            <Text style={styles.cardTitle}>
+              {data.scanType === "container" ? "Conteneur" : "Mission"}
             </Text>
+            {data.scanType === "container" ? (
+              <Text style={styles.cardText}>QR conteneur: {data.qrCode}</Text>
+            ) : (
+              <>
+                <Text style={styles.cardText}>Mission: {data.missionId}</Text>
+                <Text style={styles.cardText}>Site: {data.site || "—"}</Text>
+              </>
+            )}
+
+            {queuedOffline ? (
+              <Text style={[styles.cardText, { color: "#fbbf24" }]}>
+                {t("qr.queued")}
+              </Text>
+            ) : null}
 
             <Pressable
               style={[
@@ -107,25 +130,32 @@ export function QRScannerView({
                 role === "driver"
                   ? styles.driverButton
                   : styles.technicianButton,
+                confirming && { opacity: 0.6 },
               ]}
               onPress={handleAction}
+              disabled={confirming}
             >
               <Text style={styles.primaryButtonText}>
-                {role === "driver" ? "Start Delivery" : "Confirm Package"}
+                {confirming
+                  ? t("qr.confirming")
+                  : !isOnline
+                    ? t("qr.saveOffline")
+                    : role === "driver"
+                      ? t("qr.driverAction")
+                      : t("qr.techAction")}
               </Text>
             </Pressable>
 
             <Pressable style={styles.secondaryButton} onPress={reset}>
               <RefreshCcw color="white" size={18} />
-              <Text style={styles.secondaryButtonText}>Scan another QR</Text>
+              <Text style={styles.secondaryButtonText}>{t("qr.scanAnother")}</Text>
             </Pressable>
           </>
         ) : (
           <>
-            <Text style={styles.cardTitle}>Ready to scan</Text>
+            <Text style={styles.cardTitle}>{t("qr.ready")}</Text>
             <Text style={styles.cardText}>
-              Keep the QR code steady inside the frame and wait for it to
-              register.
+              {t("qr.readyHint")}
             </Text>
           </>
         )}
@@ -331,5 +361,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
     fontSize: 13,
+  },
+
+  rtlText: {
+    textAlign: "right",
   },
 });

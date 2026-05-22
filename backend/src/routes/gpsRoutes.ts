@@ -16,4 +16,10 @@ router.get('/live', GPSController.getAllLiveLocations);
 // Get GPS history for specific equipment
 router.get('/equipment/:equipmentId/history', GPSController.getEquipmentHistory);
 
+// Get live GPS location for a container
+router.get('/container/:containerId/live', GPSController.getContainerLiveLocation);
+
+// Get GPS history for a container
+router.get('/container/:containerId/history', GPSController.getContainerHistory);
+
 export default router;

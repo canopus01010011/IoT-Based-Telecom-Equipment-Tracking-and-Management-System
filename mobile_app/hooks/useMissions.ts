@@ -1,58 +1,93 @@
+import { getAllMissions } from "@/app/services/missions.service";
+import {
+  getCachedMissions,
+  setCachedMissions,
+} from "@/app/utils/missionsCache";
+import {
+  mapMissionForCard,
+  type MissionCardData,
+} from "@/app/utils/missionMapper";
+import { isNetworkError } from "@/app/utils/networkError";
+import { useOffline } from "@/context/OfflineContext";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
 export function useMissions() {
-  const missions = [
-    {
-      id: 1,
-      site: "Blida Telecom Tower",
-      company: "Mobilis",
-      address: "13 Mai, Blida",
-      time: "10:00 AM",
-      items: 5,
-      status: "Pending",
-      technician: {
-        latitude: 36.47,
-        longitude: 2.83,
-        phone: "0550000001",
-      },
-    },
-    {
-      id: 2,
-      site: "Alger Center Hub",
-      company: "Ooredoo",
-      address: "45 Central Avenue, Alger",
-      time: "11:30 AM",
-      items: 3,
-      status: "In Progress",
-      technician: {
-        latitude: 36.75,
-        longitude: 3.05,
-        phone: "0550000002",
-      },
-    },
-    {
-      id: 3,
-      site: "Boufarik Node",
-      company: "Djezzy",
-      address: "78 Node Street, Boufarik",
-      time: "2:00 PM",
-      items: 7,
-      status: "Completed",
-      technician: {
-        latitude: 36.69,
-        longitude: 2.85,
-        phone: "0550000003",
-      },
-    },
-  ];
-  const activeMissions = missions.filter((m) => m.status !== "Completed");
+  const [missions, setMissions] = useState<MissionCardData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isFromCache, setIsFromCache] = useState(false);
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
+  const { isOnline, registerOnReconnect } = useOffline();
 
-  const completedMissions = missions.filter((m) => m.status === "Completed");
+  const loadMissions = useCallback(async () => {
+    try {
+      const data = await getAllMissions();
+      const mapped = data.map(mapMissionForCard);
+      setMissions(mapped);
+      setIsFromCache(false);
+      setCachedAt(null);
+      await setCachedMissions(mapped);
+    } catch (error) {
+      console.error("Unable to load missions", error);
+      const cached = await getCachedMissions();
+      if (cached.missions.length > 0) {
+        setMissions(cached.missions);
+        setIsFromCache(true);
+        setCachedAt(cached.savedAt);
+      }
+      if (!isNetworkError(error) && cached.missions.length === 0) {
+        throw error;
+      }
+    }
+  }, []);
 
-  const activeMission = activeMissions.length > 0 ? activeMissions[0] : null;
+  useEffect(() => {
+    let active = true;
+
+    async function init() {
+      setLoading(true);
+      await loadMissions();
+      if (active) setLoading(false);
+    }
+
+    init();
+
+    return () => {
+      active = false;
+    };
+  }, [loadMissions]);
+
+  useEffect(() => {
+    return registerOnReconnect(() => {
+      void loadMissions();
+    });
+  }, [registerOnReconnect, loadMissions]);
+
+  const activeMissions = useMemo(
+    () => missions.filter((m) => m.statusRaw !== "completed"),
+    [missions],
+  );
+
+  const completedMissions = useMemo(
+    () => missions.filter((m) => m.statusRaw === "completed"),
+    [missions],
+  );
+
+  const activeMission = useMemo(() => {
+    const inProgress = activeMissions.find((m) => m.statusRaw === "in-progress");
+    if (inProgress) return inProgress;
+    const pending = activeMissions.find((m) => m.statusRaw === "pending");
+    return pending ?? (activeMissions.length > 0 ? activeMissions[0] : null);
+  }, [activeMissions]);
 
   return {
     missions,
     activeMissions,
     activeMission,
     completedMissions,
+    loading,
+    isFromCache,
+    cachedAt,
+    isOnline,
+    refetch: loadMissions,
   };
 }
