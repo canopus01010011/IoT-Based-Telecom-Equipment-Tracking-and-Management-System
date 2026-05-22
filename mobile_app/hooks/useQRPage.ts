@@ -46,14 +46,8 @@ export function useQRPage(): QRPageResult {
 
   const buildPayload = () => {
     if (!user) return null;
-    if (user.role === "driver") {
-      if (data?.scanType === "mission") {
-        return { missionId: data.missionId };
-      }
-      if (data?.scanType === "container") {
-        return { qrCode: data.qrCode };
-      }
-      return { missionId: data?.missionId || String(routeMissionId || "") };
+    if (data?.scanType === "container") {
+      return { qrCode: data.qrCode };
     }
     return { missionId: data?.missionId || String(routeMissionId || "") };
   };
@@ -75,8 +69,8 @@ export function useQRPage(): QRPageResult {
       return;
     }
 
-    if (user.role === "technician" && !payload.missionId) {
-      Alert.alert("Site", "Scannez le QR de la mission sur le site de livraison.");
+    if (user.role === "technician" && !payload.missionId && !payload.qrCode) {
+      Alert.alert("Site", "Scannez le QR de la mission ou du conteneur sur le site.");
       return;
     }
 
