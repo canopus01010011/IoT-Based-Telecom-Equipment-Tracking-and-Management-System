@@ -1,10 +1,10 @@
-import { Mission, User } from '../models/index.js';
+import { Mission, Report, Site, User } from '../models/index.js';
 import { Op } from 'sequelize';
 import ExcelJS from 'exceljs';
 
 export class ReportService {
-  static async getMissionReport(filters: any, page: number = 1, limit: number = 50) {
-    const offset = (page - 1) * limit;
+  static async getMissionReport(filters: any, page: number = 1, limit: number = 0) {
+    const offset = limit > 0 ? (page - 1) * limit : 0;
     const where: any = {};
 
     if (filters.startDate && filters.endDate) {
@@ -17,11 +17,12 @@ export class ReportService {
     const { count, rows } = await Mission.findAndCountAll({
       where,
       include: [
-        { model: User, as: 'technician', attributes: ['id', 'full_name'] },
-        { model: User, as: 'driver', attributes: ['id', 'full_name'] },
+        { model: User, as: 'technician', attributes: ['id', 'full_name', 'phone'] },
+        { model: User, as: 'driver', attributes: ['id', 'full_name', 'phone'] },
+        { model: Site, attributes: ['id', 'name', 'latitude', 'longitude'] },
+        { model: Report, attributes: ['id', 'description', 'notes', 'delivery_photo_url', 'report_date'] },
       ],
-      limit,
-      offset,
+      ...(limit > 0 ? { limit, offset } : {}),
       order: [['creation_date', 'DESC']],
     });
 
@@ -33,7 +34,7 @@ export class ReportService {
       missions: rows,
       total: count,
       page,
-      totalPages: Math.ceil(count / limit),
+      totalPages: limit > 0 ? Math.ceil(count / limit) : 1,
       summary: {
         total: count,
         completed,

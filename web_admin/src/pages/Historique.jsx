@@ -21,7 +21,7 @@ const MOCK = [
 const STATUS_FILTERS = ['All', 'Pending', 'In Progress', 'Completed']
 const FILTER_TO_API = { 'Pending': 'pending', 'In Progress': 'in-progress', 'Completed': 'completed' }
 const COLS = '.7fr 1.3fr 1fr 1.3fr .8fr .9fr'
-const PER_PAGE = 6
+const PER_PAGE = 15
 
 const icons = {
   total:    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>,

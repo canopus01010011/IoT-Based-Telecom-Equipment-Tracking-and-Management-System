@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Mission, Site, User, MissionFile } from '../models/index.js';
+import { Mission, Report, Site, User, MissionFile } from '../models/index.js';
 import { NotificationService } from './notificationService.js';
 
 const normalizeMissionPayload = (data: any) => ({
@@ -70,6 +70,7 @@ export class MissionService {
         { model: User, as: 'technician' },
         { model: User, as: 'driver' },
         { model: Site },
+        { model: Report, attributes: ['id', 'description', 'notes', 'delivery_photo_url', 'report_date'] },
       ],
     });
     if (!mission) throw new Error('Mission not found');
@@ -95,7 +96,7 @@ export class MissionService {
     return true;
   }
 
-  static async updateStatus(id: string, status: string, userRole: string, userId: string) {
+  static async updateStatus(id: string, status: string, userRole: string, userId: string, notes?: string) {
     const mission = await Mission.findByPk(id);
     if (!mission) throw new Error('Mission not found');
     if (userRole !== 'admin' && mission.technician_id !== userId && mission.driver_id !== userId) {
@@ -103,9 +104,9 @@ export class MissionService {
     }
 
     const allowed: Record<string, string[]> = {
-      pending: ['in-progress'],
+      pending: ['in-progress', 'completed'],
       'in-progress': ['completed'],
-      completed: [],
+      completed: ['pending'],
     };
 
     if (!allowed[mission.status]?.includes(status)) {
@@ -117,6 +118,15 @@ export class MissionService {
     if (status === 'completed') updates.end_date = new Date();
 
     await mission.update(updates);
+
+    // Save admin notes if provided
+    if (notes) {
+      const [report] = await Report.findOrCreate({
+        where: { mission_id: id },
+        defaults: { mission_id: id, description: '', notes },
+      });
+      if (report) await report.update({ notes });
+    }
 
     // Fire notifications
     const reloaded = await Mission.findByPk(id, {

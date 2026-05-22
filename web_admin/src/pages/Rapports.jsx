@@ -10,15 +10,7 @@ import { useT }    from '../context/LanguageContext'
 
 const avatarColors = ['#1d4ed8','#0f6e56','#712b13','#534ab7','#854f0b']
 
-const MOCK = [
-  { id:1, reference:'MSN-087', site:'BTS Bab Ezzouar', gps:'36.7372, 3.1897', date:'12 Apr 2024', heureDebut:'08:30', heureFin:'12:15', statut:'Approved',  technicien:{ nom:'K. Benali',  telephone:'+213 550 12 34' }},
-  { id:2, reference:'MSN-086', site:'Kouba North Site', gps:'36.7218, 3.0847', date:'11 Apr 2024', heureDebut:'09:00', heureFin:'14:30', statut:'Pending',   technicien:{ nom:'A. Hamid',   telephone:'+213 661 98 76' }},
-  { id:3, reference:'MSN-085', site:'Rouiba Tower',     gps:'36.7310, 3.2841', date:'10 Apr 2024', heureDebut:'07:45', heureFin:'11:00', statut:'Pending',   technicien:{ nom:'M. Saadi',   telephone:'+213 770 45 67' }},
-  { id:4, reference:'MSN-084', site:'Dar El Beida',     gps:'36.6918, 3.2156', date:'09 Apr 2024', heureDebut:'10:00', heureFin:'15:45', statut:'Approved',  technicien:{ nom:'K. Benali',  telephone:'+213 550 12 34' }},
-  { id:5, reference:'MSN-083', site:'Hussein Dey',      gps:'36.7456, 3.0962', date:'08 Apr 2024', heureDebut:'06:30', heureFin:'10:00', statut:'Rejected',  technicien:{ nom:'O. Meziane', telephone:'+213 699 23 45' }},
-]
-
-const STATUS_FILTERS = ['All', 'Pending', 'Approved', 'Rejected']
+const STATUS_FILTERS = ['All', 'pending', 'in-progress', 'completed']
 const COLS = '.7fr 1.3fr 1.1fr 1.4fr .9fr .8fr'
 
 export default function Rapports() {
@@ -29,13 +21,20 @@ export default function Rapports() {
   const [search, setSearch]     = useState('')
 
   useEffect(() => {
-    axios.get('/api/reports/missions', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-      .then(r => setRapports((r.data.missions || []).map(m => ({
-        id: m.id, reference: m.id, site: m.Site?.name || '',
-        gps: m.gps_coordinates || '', date: m.scheduled_start_date ? m.scheduled_start_date.split('T')[0] : '',
-        heureDebut: '', heureFin: '', statut: m.status === 'completed' ? 'Approved' : m.status === 'in-progress' ? 'Pending' : m.status,
-        technicien: { nom: m.technician?.full_name || m.driver?.full_name || '', telephone: m.technician?.phone || m.driver?.phone || '' }
-      })))).catch(() => setRapports(MOCK))
+    axios.get('/api/reports/missions?limit=0', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => setRapports((r.data.missions || []).map(m => {
+        const site = m.Site || {}
+        const tech = m.technician || m.driver || {}
+        return {
+          id: m.id, reference: m.id, site: site.name || '',
+          gps: site.latitude && site.longitude ? `${site.latitude}, ${site.longitude}` : '',
+          date: m.scheduled_start_date ? m.scheduled_start_date.split('T')[0] : '',
+          heureDebut: m.start_date ? new Date(m.start_date).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '',
+          heureFin: m.end_date ? new Date(m.end_date).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '',
+          statut: m.status,
+          technicien: { nom: tech.full_name || '', telephone: tech.phone || '' }
+        }
+      }))).catch(() => setRapports([]))
   }, [])
 
   const displayed = rapports.filter(r => {
@@ -47,8 +46,8 @@ export default function Rapports() {
 
   const stats = {
     total:  rapports.length,
-    valide: rapports.filter(r => r.statut === 'Approved').length,
-    attend: rapports.filter(r => r.statut === 'Pending').length,
+    valide: rapports.filter(r => r.statut === 'completed').length,
+    attend: rapports.filter(r => r.statut === 'in-progress' || r.statut === 'pending').length,
   }
 
   return (
@@ -87,10 +86,10 @@ export default function Rapports() {
             </div>
             <div>
               <p style={{ fontSize:11 }}>{r.site}</p>
-              <p style={{ fontSize:10, color:'rgba(59,130,246,.55)' }}>📍 {r.gps}</p>
+              {r.gps && <p style={{ fontSize:10, color:'rgba(59,130,246,.55)' }}>📍 {r.gps}</p>}
             </div>
             <div>
-              <p style={{ fontSize:10, color:'rgba(148,163,184,.5)' }}>{r.heureDebut} → {r.heureFin}</p>
+              <p style={{ fontSize:10, color:'rgba(148,163,184,.5)' }}>{r.heureDebut && r.heureFin ? `${r.heureDebut} → ${r.heureFin}` : ''}</p>
               <p style={{ fontSize:10, color:'rgba(148,163,184,.4)' }}>{r.date}</p>
             </div>
             <StatusBadge statut={r.statut} />

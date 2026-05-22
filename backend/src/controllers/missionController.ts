@@ -78,12 +78,13 @@ export class MissionController {
 
   static async updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status } = req.body;
+      const { status, notes } = req.body;
       const mission = await MissionService.updateStatus(
         req.params.id as string,
         status,
         req.user?.role as string,
-        req.user?.id as string
+        req.user?.id as string,
+        notes
       );
       res.json(mission);
     } catch (error) {
