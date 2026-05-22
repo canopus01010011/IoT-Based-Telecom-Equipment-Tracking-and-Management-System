@@ -203,15 +203,6 @@ export default function MapScreen() {
           )
         )}
 
-        {/* Traveled path — GPS history trail (only if route exists) */}
-        {trailCoordinates.length > 1 && (
-          <Polyline
-            coordinates={[warehouse, ...trailCoordinates]}
-            strokeColor="#3b82f6"
-            strokeWidth={5}
-          />
-        )}
-
         {/* Remaining path — slice GPX from current position (only if route exists) */}
         {iotCoordinate && destination && remainingGpxRoute.length > 1 && (
           <Polyline
