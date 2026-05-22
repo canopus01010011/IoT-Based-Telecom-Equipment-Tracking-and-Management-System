@@ -44,6 +44,15 @@ export class DeliveryController {
         if (error.message.includes('Invalid')) {
           return res.status(404).json({ error: error.message });
         }
+        if (error.message.includes('not found')) {
+          return res.status(404).json({ error: error.message });
+        }
+        if (error.message.includes('already completed')) {
+          return res.status(409).json({ error: error.message });
+        }
+        if (error.message.includes('Only drivers')) {
+          return res.status(403).json({ error: error.message });
+        }
       }
       next(error);
     }
