@@ -86,15 +86,14 @@ export default function Historique() {
           cols={COLS}
           isEmpty={displayed.length === 0}
           empty={t.noMissionsFound}
-          flex
         >
           {displayed.map(m => (
-            <div key={m.id} style={{ display:'grid', gridTemplateColumns: COLS, padding:'12px 16px', fontSize:12, color:'#cbd5e1', borderBottom:'0.5px solid rgba(255,255,255,.04)', alignItems:'center' }}>
+            <div key={m.id} style={{ display:'grid', gridTemplateColumns: COLS, padding:'12px 16px', fontSize:12, color:'var(--text-table)', borderBottom:'0.5px solid var(--border-row)', alignItems:'center' }}>
               <span style={{ color:'#60a5fa', fontWeight:500 }}>{m.ref}</span>
               <span>{m.site}</span>
-              <span style={{ color:'rgba(148,163,184,.7)' }}>{m.driver}</span>
-              <span style={{ color:'rgba(148,163,184,.5)', fontSize:11 }}>{m.equip}</span>
-              <span style={{ color:'rgba(148,163,184,.5)', fontSize:11 }}>{m.date}</span>
+              <span style={{ color:'var(--text-secondary)' }}>{m.driver}</span>
+              <span style={{ color:'var(--text-muted)', fontSize:11 }}>{m.equip}</span>
+              <span style={{ color:'var(--text-muted)', fontSize:11 }}>{m.date}</span>
               <StatusBadge statut={m.statut} />
             </div>
           ))}
@@ -105,7 +104,7 @@ export default function Historique() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:16 }}>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
             <button key={p} onClick={() => setPage(p)}
-              style={{ width:32, height:32, borderRadius:7, fontSize:12, background: p === page ? '#1d4ed8' : 'rgba(59,130,246,.08)', border: p === page ? 'none' : '1px solid rgba(59,130,246,.15)', color: p === page ? '#fff' : 'rgba(148,163,184,.6)', cursor:'pointer' }}>
+              style={{ width:32, height:32, borderRadius:7, fontSize:12, background: p === page ? '#1d4ed8' : 'var(--bg-accent)', border: p === page ? 'none' : '1px solid var(--border-default)', color: p === page ? '#fff' : 'var(--text-secondary)', cursor:'pointer' }}>
               {p}
             </button>
           ))}

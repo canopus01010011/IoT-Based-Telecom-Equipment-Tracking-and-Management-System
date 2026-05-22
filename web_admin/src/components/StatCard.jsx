@@ -1,8 +1,8 @@
 export default function StatCard({ label, value, color = '#e2e8f0', icon }) {
   return (
     <div style={{
-      background: '#0d1426',
-      border: '1px solid rgba(59,130,246,.12)',
+      background: 'var(--bg-sub)',
+      border: '1px solid var(--border-card)',
       borderRadius: 12,
       padding: '18px 20px',
       display: 'flex',
@@ -22,7 +22,7 @@ export default function StatCard({ label, value, color = '#e2e8f0', icon }) {
       )}
       <div>
         <p style={{ fontSize: 24, fontWeight: 700, color, lineHeight: 1, letterSpacing: '-0.5px' }}>{value}</p>
-        <p style={{ fontSize: 11, color: 'rgba(148,163,184,.5)', marginTop: 4 }}>{label}</p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{label}</p>
       </div>
     </div>
   )

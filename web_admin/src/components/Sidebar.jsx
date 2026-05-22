@@ -20,68 +20,75 @@ export default function Sidebar() {
   const t = useT()
 
   const links = [
-    { to: '/dashboard',             label: t.dashboard,      icon: IC.dashboard    },
-    { to: '/dashboard/missions',    label: t.createMission,  icon: IC.mission      },
-    { to: '/dashboard/suivi',       label: t.missionTracking,icon: IC.tracking     },
-    { to: '/dashboard/historique',  label: t.history,        icon: IC.history      },
-    { to: '/dashboard/rapports',    label: t.reports,        icon: IC.reports      },
-    { to: '/dashboard/create-user', label: t.createUser,     icon: IC.createUser   },
-    { to: '/dashboard/drivers',     label: t.drivers,        icon: IC.drivers      },
-    { to: '/dashboard/techniciens', label: t.techniciensNav, icon: IC.techniciens  },
-    { to: '/dashboard/settings',    label: t.settings,       icon: IC.settings     },
+    { to: '/dashboard',             label: t.dashboard,       icon: IC.dashboard   },
+    { to: '/dashboard/missions',    label: t.createMission,   icon: IC.mission     },
+    { to: '/dashboard/suivi',       label: t.missionTracking, icon: IC.tracking    },
+    { to: '/dashboard/historique',  label: t.history,         icon: IC.history     },
+    { to: '/dashboard/rapports',    label: t.reports,         icon: IC.reports     },
+    { to: '/dashboard/create-user', label: t.createUser,      icon: IC.createUser  },
+    { to: '/dashboard/drivers',     label: t.drivers,         icon: IC.drivers     },
+    { to: '/dashboard/techniciens', label: t.techniciensNav,  icon: IC.techniciens },
+    { to: '/dashboard/settings',    label: t.settings,        icon: IC.settings    },
   ]
 
   const logout = () => { localStorage.removeItem('token'); navigate('/login') }
 
   return (
-    <aside style={{ width:240, minWidth:240, height:'100vh', display:'flex', flexDirection:'column', background:'var(--bg-surface)', borderRight:'1px solid var(--border-subtle)', flexShrink:0 }}>
+    <aside style={{
+      width: 240, minWidth: 240, height: '100vh',
+      display: 'flex', flexDirection: 'column',
+      background: 'var(--bg-surface)',
+      borderRight: '1px solid var(--border-subtle)',
+      flexShrink: 0,
+      transition: 'background .2s',
+    }}>
 
       {/* Logo */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, padding:'20px 18px 18px', borderBottom:'1px solid rgba(59,130,246,.08)' }}>
-        <div style={{ width:36, height:36, borderRadius:10, overflow:'hidden', background:'rgba(59,130,246,.15)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <img src={`data:image/png;base64,${logo}`} alt="ErcTrac" style={{ width:36, height:36, objectFit:'cover', display:'block' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 18px 18px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, overflow: 'hidden', background: 'rgba(59,130,246,.15)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={`data:image/png;base64,${logo}`} alt="ErcTrac" style={{ width: 36, height: 36, objectFit: 'cover', display: 'block' }} />
         </div>
         <div>
-          <p style={{ fontSize:15, fontWeight:600, color:'#e2e8f0', lineHeight:1.2, letterSpacing:'-0.3px' }}>
-            Erc<span style={{ color:'#3b82f6' }}>Trac</span>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, letterSpacing: '-0.3px' }}>
+            Erc<span style={{ color: '#3b82f6' }}>Trac</span>
           </p>
-          <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', marginTop:1 }}>{t.telecomAdmin}</p>
+          <p style={{ fontSize: 10, color: 'var(--text-subtle)', marginTop: 1 }}>{t.telecomAdmin}</p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex:1, overflowY:'auto', padding:'12px 10px' }}>
-        <p style={{ fontSize:10, fontWeight:600, color:'rgba(148,163,184,.3)', letterSpacing:'0.08em', textTransform:'uppercase', padding:'4px 8px 10px' }}>Menu</p>
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 10px' }}>
+        <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-subtle)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '4px 8px 10px' }}>Menu</p>
         {links.map(link => (
           <NavLink key={link.to} to={link.to} end
             style={({ isActive }) => ({
-              display:'flex', alignItems:'center', gap:10, padding:'9px 10px',
-              borderRadius:8, marginBottom:2, fontSize:13,
+              display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px',
+              borderRadius: 8, marginBottom: 2, fontSize: 13,
               fontWeight: isActive ? 500 : 400,
-              color: isActive ? '#60a5fa' : 'rgba(148,163,184,.65)',
+              color: isActive ? '#60a5fa' : 'var(--text-nav-inactive)',
               background: isActive ? 'rgba(59,130,246,.12)' : 'transparent',
-              textDecoration:'none', transition:'all .15s',
+              textDecoration: 'none', transition: 'all .15s',
             })}>
             {({ isActive }) => (
-              <><span style={{ opacity:isActive ? 1 : 0.6, flexShrink:0 }}>{link.icon}</span>{link.label}</>
+              <><span style={{ opacity: isActive ? 1 : 0.6, flexShrink: 0 }}>{link.icon}</span>{link.label}</>
             )}
           </NavLink>
         ))}
       </nav>
 
       {/* User + Logout */}
-      <div style={{ padding:'12px 10px 16px', borderTop:'1px solid rgba(59,130,246,.08)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px', borderRadius:8, background:'rgba(255,255,255,.03)', marginBottom:6 }}>
-          <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#1d4ed8,#3b82f6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:600, color:'#fff', flexShrink:0 }}>A</div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <p style={{ fontSize:12, fontWeight:500, color:'#e2e8f0', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Administrator</p>
-            <p style={{ fontSize:10, color:'rgba(148,163,184,.4)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>admin@erctrac.dz</p>
+      <div style={{ padding: '12px 10px 16px', borderTop: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px', borderRadius: 8, background: 'var(--bg-item)', marginBottom: 6 }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#1d4ed8,#3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#fff', flexShrink: 0 }}>A</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Administrator</p>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>admin@erctrac.dz</p>
           </div>
         </div>
         <button onClick={logout}
-          style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'8px 10px', borderRadius:8, background:'none', border:'none', cursor:'pointer', fontSize:12, color:'rgba(148,163,184,.45)', transition:'all .15s' }}
-          onMouseEnter={e => { e.currentTarget.style.color='#f87171'; e.currentTarget.style.background='rgba(239,68,68,.06)' }}
-          onMouseLeave={e => { e.currentTarget.style.color='rgba(148,163,184,.45)'; e.currentTarget.style.background='none' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px', borderRadius: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', transition: 'all .15s' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; e.currentTarget.style.background = 'rgba(239,68,68,.06)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none' }}>
           {IC.logout}{t.logout}
         </button>
       </div>
