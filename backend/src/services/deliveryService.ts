@@ -3,7 +3,7 @@ import { Confirmation, Container, GPSDevice, Mission, Report, Site, User } from 
 import { NotificationService } from './notificationService.js';
 import axios from 'axios';
 
-const IOT_BASE_URL = process.env.IOT_BASE_URL || 'https://iot-based-telecom-equipment-tracking-and-managem-production.up.railway.app';
+const IOT_BASE_URL = process.env.IOT_SERVICE_URL || process.env.IOT_BASE_URL || 'https://telecom-equipment-tracking-and-management-system-production.up.railway.app';
 
 async function getAdminIds(): Promise<string[]> {
   const admins = await User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
