@@ -152,17 +152,25 @@ function MapModal({ mission, onClose }) {
         L.polyline(fullCoords, {
           color: '#93c5fd', weight: 4, dashArray: '10 7', opacity: 0.7,
         }).addTo(map)
+      } else {
+        // Fallback straight line
+        L.polyline([[dLat, dLng], [tLat, tLng]], {
+          color: '#93c5fd', weight: 3, dashArray: '8 6', opacity: 0.6,
+        }).addTo(map)
       }
 
       // Traveled route: depot → current truck position (solid blue)
       if (mission.lat != null && mission.lng != null) {
-        fetchOsrmRoute(dLat, dLng, mission.lat, mission.lng).then(travelCoords => {
-          if (travelCoords && mapObj.current) {
-            travelLine.current = L.polyline(travelCoords, {
-              color: '#3b82f6', weight: 5, opacity: 0.9,
-            }).addTo(mapObj.current)
-          }
-        })
+        const travelCoords = await fetchOsrmRoute(dLat, dLng, mission.lat, mission.lng)
+        if (travelCoords) {
+          travelLine.current = L.polyline(travelCoords, {
+            color: '#3b82f6', weight: 5, opacity: 0.9,
+          }).addTo(map)
+        } else {
+          travelLine.current = L.polyline([[dLat, dLng], [lat, lng]], {
+            color: '#3b82f6', weight: 4, opacity: 0.8,
+          }).addTo(map)
+        }
       }
 
       // Fit bounds to full route
@@ -198,8 +206,9 @@ function MapModal({ mission, onClose }) {
             travelLine.current = null
           }
           const L = window.L
-          if (!L || !coords) return
-          travelLine.current = L.polyline(coords, {
+          if (!L) return
+          const latLngs = coords || [[dLat, dLng], [mission.lat, mission.lng]]
+          travelLine.current = L.polyline(latLngs, {
             color: '#3b82f6', weight: 5, opacity: 0.9,
           }).addTo(mapObj.current)
         })
@@ -349,7 +358,7 @@ export default function SuiviMissions() {
       } catch (_) {}
 
       try {
-        const mRes = await axios.get('/api/missions?limit=0', { headers })
+        const mRes = await axios.get('/api/missions', { headers })
         setMissions(
           (mRes.data.missions || []).map(m => parseMission(m, gpsMap, null))
         )
@@ -361,7 +370,7 @@ export default function SuiviMissions() {
 
     // ② Poll missions every 5 s (preserve GPS positions from state)
     const missionPoll = setInterval(() => {
-      axios.get('/api/missions?limit=0', { headers }).then(mRes => {
+      axios.get('/api/missions', { headers }).then(mRes => {
         setMissions(prev => {
           const prevMap = new Map(prev.map(m => [m.id, m]))
           return (mRes.data.missions || []).map(m => parseMission(m, null, prevMap))

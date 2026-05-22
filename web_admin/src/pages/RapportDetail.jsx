@@ -6,6 +6,16 @@ import FormCard    from '../components/FormCard'
 import StatusBadge from '../components/StatusBadge'
 import { useT }    from '../context/LanguageContext'
 
+const MOCK = {
+  id:1, reference:'MSN-087', site:'BTS Bab Ezzouar', gps:'36.7372, 3.1897',
+  date:'12 Apr 2024', heureDebut:'08:30', heureFin:'12:15', statut:'Pending',
+  technicien:{ nom:'Karim Benali', telephone:'+213 550 12 34' },
+  travaux:'Replacement of fiber optic cables in the North sector. Installation of new 4G antenna on tower P-12. Verification of network connections.',
+  materiel:['Fiber optic 50m','SC/APC Connectors','4G Antenna','RJ45 Cables'],
+  incidents:'Tower P-12 slightly corroded — flagged for preventive maintenance.',
+  photos:[1,2,3],
+}
+
 const lbl = { fontSize:11, color:'var(--text-muted)', marginBottom:3 }
 const val = { fontSize:13, color:'var(--text-primary)' }
 
@@ -129,18 +139,21 @@ export default function RapportDetail() {
               : <span style={{ fontSize:11, color:'var(--text-muted)' }}>—</span>}
           </div>
         </div>
+        <div>
+          <p style={lbl}>{t.issuesIncidents}</p>
+          <p style={{ ...val, color: rapport.incidents ? '#fbbf24' : 'var(--text-muted)', marginTop:4 }}>
+            {rapport.incidents || t.noIncidents}
+          </p>
+        </div>
       </FormCard>
 
       {rapport.photos?.length > 0 && (
         <FormCard title={t.sitePhotos}>
           <div className="grid grid-cols-3 gap-3">
-            {rapport.photos.map((url, i) => (
-              <a key={i} href={url} target="_blank" rel="noopener noreferrer" style={{ display:'block' }}>
-                <div style={{ background:'var(--bg-sub)', border:'0.5px solid rgba(59,130,246,.15)', borderRadius:8, height:80, overflow:'hidden', cursor:'pointer' }}>
-                  <img src={url} alt={`Photo ${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover' }}
-                    onError={e => { e.target.style.display='none'; e.target.parentElement.style.display='flex'; e.target.parentElement.style.alignItems='center'; e.target.parentElement.style.justifyContent='center'; e.target.parentElement.innerHTML='📷'; e.target.parentElement.style.fontSize='20px' }} />
-                </div>
-              </a>
+            {rapport.photos.map((_, i) => (
+              <div key={i} style={{ background:'var(--bg-sub)', border:'0.5px solid var(--border-default)', borderRadius:8, height:80, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'var(--text-muted)' }}>
+                📷 Photo {i + 1}
+              </div>
             ))}
           </div>
         </FormCard>
