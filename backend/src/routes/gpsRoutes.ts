@@ -22,4 +22,7 @@ router.get('/container/:containerId/live', GPSController.getContainerLiveLocatio
 // Get GPS history for a container
 router.get('/container/:containerId/history', GPSController.getContainerHistory);
 
+// Get planned route waypoints by route name (e.g., OS-Draria, OS-APN)
+router.get('/route/:routeName', GPSController.getRoute);
+
 export default router;

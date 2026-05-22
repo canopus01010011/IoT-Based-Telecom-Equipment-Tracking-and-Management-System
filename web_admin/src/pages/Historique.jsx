@@ -18,9 +18,13 @@ const MOCK = [
   { id:8, ref:'MSN-080', site:'Baraki Tower',      driver:'K. Benali',  equip:'4G Antenna',      date:'04/05/2024', statut:'Completed'   },
 ]
 
-const STATUS_FILTERS = ['All', 'Completed', 'In Progress', 'Pending', 'Incident', 'Cancelled']
+const FILTER_TO_API = {
+  'All': 'All', 'completed': 'completed', 'in-progress': 'in-progress',
+  'pending': 'pending', 'incident': 'incident', 'cancelled': 'cancelled',
+}
+const STATUS_FILTERS = Object.keys(FILTER_TO_API)
 const COLS = '.7fr 1.3fr 1fr 1.3fr .8fr .9fr'
-const PER_PAGE = 6
+const PER_PAGE = 15
 
 const icons = {
   total:    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>,
@@ -37,7 +41,7 @@ export default function Historique() {
   const [page, setPage]         = useState(1)
 
   useEffect(() => {
-    axios.get('/api/missions', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+    axios.get('/api/missions?limit=0', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       .then(r => setMissions((r.data.missions || []).map(m => ({
         id: m.id, ref: m.id, site: m.Site?.name || '', driver: m.driver?.full_name || '',
         equip: Array.isArray(m.equipment_list) ? m.equipment_list.map(e => e.equipment_id).join(', ') : '',
@@ -46,7 +50,8 @@ export default function Historique() {
   }, [])
 
   const filtered = missions.filter(m => {
-    const matchF = filtre === 'All' || m.statut === filtre
+    const apiFiltre = FILTER_TO_API[filtre]
+    const matchF = filtre === 'All' || m.statut === apiFiltre
     const matchS = m.site?.toLowerCase().includes(search.toLowerCase()) ||
                    m.driver?.toLowerCase().includes(search.toLowerCase()) ||
                    m.ref?.toLowerCase().includes(search.toLowerCase())

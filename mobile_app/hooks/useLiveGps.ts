@@ -3,6 +3,8 @@ import {
   getLiveGpsForContainer,
   type GpsTrackPoint,
   type LiveGpsDevice,
+  getRouteWaypoints,
+  type RouteWaypoint,
 } from "@/app/services/gps.service";
 import { getCachedGps, setCachedGps } from "@/app/utils/gpsCache";
 import { useOffline } from "@/context/OfflineContext";
@@ -10,9 +12,10 @@ import { useEffect, useState } from "react";
 
 const POLL_MS = 10000;
 
-export function useLiveGps(containerId?: string | null) {
+export function useLiveGps(containerId?: string | null, routeName?: string | null) {
   const [device, setDevice] = useState<LiveGpsDevice | null>(null);
   const [trackPoints, setTrackPoints] = useState<GpsTrackPoint[]>([]);
+  const [plannedRoute, setPlannedRoute] = useState<RouteWaypoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [isFromCache, setIsFromCache] = useState(false);
   const { isOnline } = useOffline();
@@ -21,6 +24,7 @@ export function useLiveGps(containerId?: string | null) {
     if (!containerId) {
       setDevice(null);
       setTrackPoints([]);
+      setPlannedRoute([]);
       setIsFromCache(false);
       return;
     }
@@ -40,13 +44,15 @@ export function useLiveGps(containerId?: string | null) {
       }
 
       try {
-        const [live, history] = await Promise.all([
+        const [live, history, route] = await Promise.all([
           getLiveGpsForContainer(containerId),
           getGpsHistoryForContainer(containerId),
+          routeName ? getRouteWaypoints(routeName) : Promise.resolve([]),
         ]);
         if (active) {
           setDevice(live);
           setTrackPoints(history);
+          setPlannedRoute(route);
           setIsFromCache(false);
           await setCachedGps(containerId, { device: live, trackPoints: history });
         }
@@ -80,7 +86,7 @@ export function useLiveGps(containerId?: string | null) {
       active = false;
       clearInterval(timer);
     };
-  }, [containerId, isOnline]);
+  }, [containerId, isOnline, routeName]);
 
   const latest = device?.TrackingData?.[0];
   const latitude = latest ? Number(latest.latitude) : null;
@@ -95,6 +101,7 @@ export function useLiveGps(containerId?: string | null) {
   return {
     device,
     trackPoints,
+    plannedRoute,
     loading,
     latitude: liveLatitude,
     longitude: liveLongitude,

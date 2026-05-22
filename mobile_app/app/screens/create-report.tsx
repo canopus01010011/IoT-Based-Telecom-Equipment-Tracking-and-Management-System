@@ -55,9 +55,7 @@ export default function CreateReport() {
         const isAutoPlaceholder =
           desc === "Mission completed" || desc === "Delivery proof";
         const submitted =
-          photos.length > 0 ||
-          !!report?.notes?.trim() ||
-          (!!desc && !isAutoPlaceholder);
+          photos.length > 0 || (!!desc && !isAutoPlaceholder);
         setAlreadySubmitted(submitted);
       })
       .catch(() => setAlreadySubmitted(false))

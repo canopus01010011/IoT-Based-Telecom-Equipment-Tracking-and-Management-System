@@ -22,6 +22,11 @@ export type GpsTrackPoint = {
   timestamp: string;
 };
 
+export type RouteWaypoint = {
+  latitude: number;
+  longitude: number;
+};
+
 export async function getLiveGpsDevices(): Promise<LiveGpsDevice[]> {
   const response = await api.get<{
     success: boolean;
@@ -60,4 +65,24 @@ export async function getGpsHistoryForContainer(
   }>(`/gps/container/${containerId}/history?limit=${limit}`);
 
   return response.data ?? [];
+}
+
+export async function getRouteWaypoints(
+  routeName?: string | null,
+): Promise<RouteWaypoint[]> {
+  if (!routeName) return [];
+
+  try {
+    const response = await api.get<{
+      success: boolean;
+      routeName: string;
+      count: number;
+      waypoints: RouteWaypoint[];
+    }>(`/gps/route/${encodeURIComponent(routeName)}`);
+
+    return response.waypoints ?? [];
+  } catch (error) {
+    console.warn(`Failed to fetch route ${routeName}:`, error);
+    return [];
+  }
 }

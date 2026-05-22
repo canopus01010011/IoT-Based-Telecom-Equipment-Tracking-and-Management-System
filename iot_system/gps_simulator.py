@@ -67,10 +67,16 @@ def run_device(client, device, stop_event):
 
 
 if __name__ == "__main__":
+    print(f"Connecting to MQTT {BROKER_HOST}:{BROKER_PORT}...")
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     if MQTT_USERNAME:
         client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
-    client.connect(BROKER_HOST, BROKER_PORT)
+    try:
+        client.connect(BROKER_HOST, BROKER_PORT, keepalive=60)
+    except Exception as e:
+        print(f"MQTT connect failed: {e}")
+        print("Set BROKER_HOST, BROKER_PORT, MQTT_USERNAME, MQTT_PASSWORD on Railway.")
+        raise SystemExit(1) from e
     client.loop_start()
     print("Connected to the broker MQTT")
     print("Press Ctrl+C to stop simulation")

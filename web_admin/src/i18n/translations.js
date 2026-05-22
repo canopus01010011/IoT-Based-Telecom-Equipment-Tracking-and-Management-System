@@ -32,6 +32,9 @@ export const translations = {
     // Statuses (internal English key → display label)
     statuses: {
       All: 'All',
+      pending: 'Pending',
+      'in-progress': 'In Progress',
+      completed: 'Completed',
       'In Progress': 'In Progress',
       Pending: 'Pending',
       Incident: 'Incident',
@@ -270,6 +273,9 @@ export const translations = {
     // Statuses
     statuses: {
       All: 'Tous',
+      pending: 'En attente',
+      'in-progress': 'En cours',
+      completed: 'Terminé',
       'In Progress': 'En cours',
       Pending: 'En attente',
       Incident: 'Incident',

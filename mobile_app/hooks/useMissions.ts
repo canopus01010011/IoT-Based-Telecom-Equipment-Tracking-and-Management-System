@@ -9,7 +9,10 @@ import {
 } from "@/app/utils/missionMapper";
 import { isNetworkError } from "@/app/utils/networkError";
 import { useOffline } from "@/context/OfflineContext";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { io } from "socket.io-client";
+
+const SOCKET_URL = (process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
 
 export function useMissions() {
   const [missions, setMissions] = useState<MissionCardData[]>([]);
@@ -17,6 +20,7 @@ export function useMissions() {
   const [isFromCache, setIsFromCache] = useState(false);
   const [cachedAt, setCachedAt] = useState<string | null>(null);
   const { isOnline, registerOnReconnect } = useOffline();
+  const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
   const loadMissions = useCallback(async () => {
     try {
@@ -51,8 +55,21 @@ export function useMissions() {
 
     init();
 
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+      reconnection: true,
+      reconnectionDelay: 5000,
+    });
+    socketRef.current = socket;
+
+    socket.on("mission:update", () => {
+      if (active) void loadMissions();
+    });
+
     return () => {
       active = false;
+      socket.disconnect();
+      socketRef.current = null;
     };
   }, [loadMissions]);
 

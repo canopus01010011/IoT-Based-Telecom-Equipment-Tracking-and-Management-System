@@ -1,7 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import { UploadService } from '../services/uploadService.js';
 import { AIService } from '../services/aiService.js';
-import { Equipment, Mission, Report } from '../models/index.js';
+import { Equipment, Mission, Report, User, Site } from '../models/index.js';
+import { NotificationService } from '../services/notificationService.js';
+import { emitMissionUpdate } from '../sockets/socketHandler.js';
 
 export class UploadController {
   /**
@@ -183,6 +185,33 @@ export class UploadController {
         if (description) update.description = String(description);
         if (notes) update.notes = String(notes);
         await report.update(update);
+
+        // If mission was rejected and is being re-submitted, auto-complete it
+        const mission = await Mission.findByPk(missionId, {
+          include: [
+            { model: Site, attributes: ['name'] },
+            { model: User, as: 'technician', attributes: ['id', 'full_name'] },
+            { model: User, as: 'driver', attributes: ['id', 'full_name'] },
+          ],
+        });
+        if (mission && mission.status === 'pending') {
+          await mission.update({ status: 'completed', end_date: new Date() });
+          emitMissionUpdate(missionId, 'completed', 'pending');
+
+          const r = mission as any;
+          const siteName = r?.Site?.name || '';
+          const techName = r?.technician?.full_name || '';
+          const driverName = r?.driver?.full_name || '';
+          const name = techName || driverName;
+          const body = `${name} · ${siteName} · ${missionId}`;
+          const adminIds = (await User.findAll({ where: { role: 'admin' }, attributes: ['id'] })).map(u => u.id);
+          await NotificationService.send(
+            [...new Set([...adminIds, mission.technician_id, mission.driver_id].filter(Boolean))],
+            'completed',
+            body,
+            { missionId },
+          );
+        }
       }
 
       res.json({

@@ -1,4 +1,7 @@
-import { Mission, Site, User, MissionFile } from '../models/index.js';
+import { Op } from 'sequelize';
+import { Mission, Report, Site, User, MissionFile } from '../models/index.js';
+import { NotificationService } from './notificationService.js';
+import { emitMissionUpdate } from '../sockets/socketHandler.js';
 
 const normalizeMissionPayload = (data: any) => ({
   status: data.status || 'pending',
@@ -34,8 +37,8 @@ export class MissionService {
 
   static async getAllMissions(query: any, userRole: string, userId: string) {
     const page = parseInt(query.page) || 1;
-    const limit = parseInt(query.limit) || 10;
-    const offset = (page - 1) * limit;
+    const limit = parseInt(query.limit) || 0;
+    const offset = limit > 0 ? (page - 1) * limit : 0;
     const where: any = {};
 
     if (userRole === 'technician') where.technician_id = userId;
@@ -43,23 +46,22 @@ export class MissionService {
 
     if (query.status) where.status = query.status;
 
-    const { count, rows } = await Mission.findAndCountAll({
+    const result = await Mission.findAndCountAll({
       where,
       include: [
         { model: User, as: 'technician', attributes: ['id', 'full_name', 'email'] },
         { model: User, as: 'driver', attributes: ['id', 'full_name', 'email'] },
         { model: Site, attributes: ['id', 'name', 'address', 'latitude', 'longitude'] },
       ],
-      limit,
-      offset,
-      order: [['scheduled_start_date', 'ASC']],
+      ...(limit > 0 ? { limit, offset } : {}),
+      order: [['scheduled_start_date', 'DESC']],
     });
 
     return {
-      missions: rows,
-      totalPages: Math.ceil(count / limit),
+      missions: result.rows,
+      totalPages: limit > 0 ? Math.ceil(result.count / limit) : 1,
       currentPage: page,
-      totalItems: count,
+      totalItems: result.count,
     };
   }
 
@@ -69,6 +71,7 @@ export class MissionService {
         { model: User, as: 'technician' },
         { model: User, as: 'driver' },
         { model: Site },
+        { model: Report, attributes: ['id', 'description', 'notes', 'delivery_photo_url', 'report_date'] },
       ],
     });
     if (!mission) throw new Error('Mission not found');
@@ -94,7 +97,7 @@ export class MissionService {
     return true;
   }
 
-  static async updateStatus(id: string, status: string, userRole: string, userId: string) {
+  static async updateStatus(id: string, status: string, userRole: string, userId: string, notes?: string) {
     const mission = await Mission.findByPk(id);
     if (!mission) throw new Error('Mission not found');
     if (userRole !== 'admin' && mission.technician_id !== userId && mission.driver_id !== userId) {
@@ -102,20 +105,91 @@ export class MissionService {
     }
 
     const allowed: Record<string, string[]> = {
-      pending: ['in-progress'],
+      pending: ['in-progress', 'completed'],
       'in-progress': ['completed'],
-      completed: [],
+      completed: ['pending'],
     };
 
     if (!allowed[mission.status]?.includes(status)) {
       throw new Error(`Invalid status transition from ${mission.status} to ${status}`);
     }
 
+    const previousStatus = mission.status;
     const updates: any = { status };
     if (status === 'in-progress') updates.start_date = new Date();
     if (status === 'completed') updates.end_date = new Date();
 
     await mission.update(updates);
+
+    // On reject: delete the report so the technician can start fresh
+    if (status === 'pending' && previousStatus === 'completed') {
+      try {
+        await Report.destroy({ where: { mission_id: id } });
+      } catch (err: any) {
+        console.error('Failed to delete report:', err.message);
+      }
+    } else if (notes) {
+      try {
+        const existing = await Report.findOne({ where: { mission_id: id } });
+        if (existing) {
+          await existing.update({ notes });
+        } else {
+          await Report.create({ mission_id: id, description: '', notes });
+        }
+      } catch (err: any) {
+        console.error('Failed to save report notes:', err.message);
+      }
+    }
+
+    // Broadcast real-time status update via socket
+    emitMissionUpdate(id, status, previousStatus);
+
+    // Fire notifications
+    const reloaded = await Mission.findByPk(id, {
+      include: [
+        { model: User, as: 'technician', attributes: ['id', 'full_name'] },
+        { model: User, as: 'driver', attributes: ['id', 'full_name'] },
+        { model: Site, attributes: ['name'] },
+      ],
+    });
+    const adminIds = (await User.findAll({ where: { role: 'admin' }, attributes: ['id'] })).map(u => u.id);
+    const r = reloaded as any;
+    const siteName = r?.Site?.name || '';
+    const techName = r?.technician?.full_name || '';
+    const driverName = r?.driver?.full_name || '';
+
+    if (status === 'in-progress') {
+      const body = `${driverName} · ${reloaded?.container_id || ''} · ${siteName} · ${id}`;
+      await NotificationService.send(
+        [...new Set([...adminIds, mission.technician_id, mission.driver_id].filter(Boolean))],
+        'departure',
+        body,
+        { missionId: id },
+      );
+    } else if (status === 'completed') {
+      const body = `${techName || driverName} · ${siteName} · ${id}`;
+      await NotificationService.send(
+        [...new Set([...adminIds, mission.technician_id, mission.driver_id].filter(Boolean))],
+        'completed',
+        body,
+        { missionId: id },
+      );
+    } else if (status === 'pending' && previousStatus === 'completed') {
+      const body = `Report rejected — ${notes || 'No comments'} · ${siteName} · ${id}`;
+      await NotificationService.send(
+        [...new Set([mission.technician_id, mission.driver_id].filter(Boolean))],
+        'Report Rejected',
+        body,
+        { missionId: id },
+      );
+      await NotificationService.send(
+        adminIds,
+        'Report Rejected',
+        `Report rejected by admin · ${siteName} · ${id}`,
+        { missionId: id },
+      );
+    }
+
     return mission;
   }
 }

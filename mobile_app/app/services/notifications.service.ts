@@ -17,10 +17,3 @@ export async function getNotifications(
 
   return response.data ?? [];
 }
-
-export async function getUnreadCount(): Promise<number> {
-  const response = await api.get<{ unreadCount: number }>(
-    "/notifications/unread/count",
-  );
-  return response.unreadCount ?? 0;
-}

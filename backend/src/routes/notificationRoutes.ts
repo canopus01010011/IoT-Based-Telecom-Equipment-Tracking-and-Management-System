@@ -14,12 +14,6 @@ router.post('/token', NotificationController.updateToken);
 // Get notifications
 router.get('/', NotificationController.getNotifications);
 
-// Get unread count
-router.get('/unread/count', NotificationController.getUnreadCount);
-
-// Mark as read
-router.patch('/:id/read', NotificationController.markAsRead);
-
 // Admin broadcast
 router.post('/broadcast', authorize('admin'), NotificationController.sendBroadcast);
 

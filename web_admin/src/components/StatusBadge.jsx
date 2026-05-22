@@ -1,6 +1,9 @@
 import { useT } from '../context/LanguageContext'
 
 const BADGE_STYLES = {
+  'pending':     { background: 'rgba(234,179,8,.1)',   color: '#fbbf24' },
+  'in-progress': { background: 'rgba(59,130,246,.12)', color: '#60a5fa' },
+  'completed':   { background: 'rgba(34,197,94,.1)',   color: '#4ade80' },
   'In Progress': { background: 'rgba(59,130,246,.12)', color: '#60a5fa' },
   'En Route':    { background: 'rgba(59,130,246,.12)', color: '#60a5fa' },
   'On Site':     { background: 'rgba(34,197,94,.1)',   color: '#4ade80' },

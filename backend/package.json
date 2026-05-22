@@ -9,7 +9,7 @@
     "build": "echo 'no build needed'",
     "seed": "tsx src/utils/seedDatabase.ts",
     "seed:admin": "tsx src/utils/ensureAdminUser.ts",
-    "set-password": "tsx scripts/set-user-password.ts",
+    "set-password": "tsx src/scripts/set-user-password.ts",
     "start": "tsx src/server.ts"
   },
   "keywords": [],

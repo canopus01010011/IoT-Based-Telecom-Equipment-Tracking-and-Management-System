@@ -48,3 +48,18 @@ export const emitGPSUpdate = (equipmentId: string, equipmentName: string, lat: n
     timestamp: new Date().toISOString(),
   });
 };
+
+export const emitNotification = (notification: {
+  id: string;
+  title: string;
+  body: string;
+  sent_at: string;
+}) => {
+  if (!io) return;
+  io.emit('notification', notification);
+};
+
+export const emitMissionUpdate = (missionId: string, status: string, previousStatus: string) => {
+  if (!io) return;
+  io.emit('mission:update', { missionId, status, previousStatus });
+};

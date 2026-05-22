@@ -88,6 +88,7 @@ async function seedDatabase() {
         address: 'Bab Ezzouar, Alger, Algérie',
         latitude: 36.7372,
         longitude: 3.1897,
+        route: 'OS-Draria',
       },
       {
         id: 'STE-BABAHASSEN',
@@ -95,6 +96,7 @@ async function seedDatabase() {
         address: 'Baba Hassen, Alger, Algérie',
         latitude: 36.697948,
         longitude: 2.978671,
+        route: 'OS-BabaHassen',
       },
       {
         id: 'STE-BOUZAREAH',
@@ -102,6 +104,7 @@ async function seedDatabase() {
         address: 'Bouzareah, Alger, Algérie',
         latitude: 36.774056,
         longitude: 3.008713,
+        route: 'OS-Bouzareah',
       },
     ]);
     console.log(`✅ Seeded ${sites.length} Sites.`);

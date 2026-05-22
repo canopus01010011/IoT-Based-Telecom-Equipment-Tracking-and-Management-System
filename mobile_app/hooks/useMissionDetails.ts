@@ -10,6 +10,9 @@ import {
 import { isNetworkError } from "@/app/utils/networkError";
 import { useOffline } from "@/context/OfflineContext";
 import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
+
+const SOCKET_URL = (process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
 
 type MissionEquipmentRow = EquipmentItem & { quantity: number };
 
@@ -30,6 +33,20 @@ export function useMissionDetails(missionId?: string) {
     }
 
     let active = true;
+
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+      reconnection: true,
+      reconnectionDelay: 5000,
+    });
+
+    socket.on("mission:update", (event: { missionId: string }) => {
+      if (active && event.missionId === missionId) {
+        getMissionById(String(missionId))
+          .then((data) => { if (active) setMission(data) })
+          .catch(() => {});
+      }
+    });
 
     async function load() {
       try {
@@ -115,6 +132,7 @@ export function useMissionDetails(missionId?: string) {
 
     return () => {
       active = false;
+      socket.disconnect();
     };
   }, [missionId, isOnline]);
 

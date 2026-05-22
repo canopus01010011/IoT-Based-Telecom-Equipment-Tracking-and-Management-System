@@ -18,7 +18,7 @@ const MOCK = [
   { id:5, reference:'MSN-083', site:'Hussein Dey',       gps:'36.7456, 3.0962', date:'08 Apr 2024', heureDebut:'06:30', heureFin:'10:00', statut:'Rejected', technicien:{ nom:'O. Meziane', telephone:'+213 699 23 45' }},
 ]
 
-const STATUS_FILTERS = ['All', 'Pending', 'Approved', 'Rejected']
+const STATUS_FILTERS = ['All', 'completed']
 const COLS = '.7fr 1.3fr 1.1fr 1.4fr .9fr .8fr'
 
 export default function Rapports() {
@@ -29,7 +29,7 @@ export default function Rapports() {
   const [search, setSearch]     = useState('')
 
   useEffect(() => {
-    axios.get('/api/reports/missions', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+    axios.get('/api/reports/missions?limit=0', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       .then(r => setRapports((r.data.missions || []).map(m => ({
         id: m.id, reference: m.id, site: m.Site?.name || '',
         gps: m.gps_coordinates || '', date: m.scheduled_start_date ? m.scheduled_start_date.split('T')[0] : '',
@@ -47,17 +47,15 @@ export default function Rapports() {
   })
 
   const stats = {
-    total:  rapports.length,
-    valide: rapports.filter(r => r.statut === 'Approved').length,
-    attend: rapports.filter(r => r.statut === 'Pending').length,
+    total: rapports.length,
+    completed: rapports.filter(r => r.statut === 'completed').length,
   }
 
   return (
     <PageLayout title={t.reportsTitle}>
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <StatCard label={t.reportsSubmitted}  value={stats.total}  color="#e2e8f0" />
-        <StatCard label={t.approvedStat}      value={stats.valide} color="#4ade80" />
-        <StatCard label={t.pendingValidation} value={stats.attend} color="#fbbf24" />
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        <StatCard label={t.reportsSubmitted} value={stats.total}     color="#e2e8f0" />
+        <StatCard label={t.completedStat}    value={stats.completed} color="#4ade80" />
       </div>
 
       <FilterBar

@@ -47,42 +47,6 @@ export class NotificationController {
   }
 
   /**
-   * GET /api/notifications/unread/count
-   * Get unread notification count
-   */
-  static async getUnreadCount(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await NotificationService.getUnreadCount(req.user?.id as string);
-      res.json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * PATCH /api/notifications/:id/read
-   * Mark notification as read
-   */
-  static async markAsRead(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-
-      const notification = await NotificationService.markAsRead(id as string, req.user?.id as string);
-
-      res.json({
-        success: true,
-        message: 'Notification marked as read',
-        data: notification,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.message === 'Notification not found') {
-        return res.status(404).json({ error: error.message });
-      }
-      next(error);
-    }
-  }
-
-  /**
    * POST /api/notifications/send (Admin only)
    * Send manual broadcast notification
    */

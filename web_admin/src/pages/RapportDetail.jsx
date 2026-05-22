@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import PageLayout  from '../components/PageLayout'
 import FormCard    from '../components/FormCard'
+import StatusBadge from '../components/StatusBadge'
 import { useT }    from '../context/LanguageContext'
 
 const MOCK = {
@@ -29,27 +30,41 @@ export default function RapportDetail() {
   const [actionError, setActionError] = useState('')
 
   useEffect(() => {
-    axios.get(`/api/missions/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-      .then(r => setRapport(d => {
-        const raw = r.data.mission || r.data;
-        if (raw.technicien) return raw; // already has mock-like format
-        return {
-          ...d, id: raw.id, reference: raw.id, site: raw.Site?.name || raw.site || '',
-          gps: raw.gps_coordinates || '', date: raw.scheduled_start_date ? raw.scheduled_start_date.split('T')[0] : '',
-          heureDebut: '', heureFin: '',
-          statut: raw.status === 'completed' ? 'Approved' : raw.status === 'in-progress' ? 'Pending' : raw.status,
-          technicien: { nom: raw.technician?.full_name || raw.driver?.full_name || '', telephone: raw.technician?.phone || raw.driver?.phone || '' },
-          travaux: raw.description || raw.travaux || '', materiel: Array.isArray(raw.equipment_list) ? raw.equipment_list.map(e => e.equipment_id) : (raw.materiel || []),
-          incidents: raw.incidents || ''
-        };
-      })).catch(() => setRapport(MOCK))
-  }, [id])
+    axios.get(`/api/missions/${id}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      params: { include: 'report' }
+    })
+      .then(r => {
+        const raw = r.data
+        const site = raw.Site || {}
+        const tech = raw.technician || raw.driver || {}
+        const report = raw.Report || {}
+        setRapport({
+          id: raw.id, reference: raw.id, site: site.name || '',
+          gps: site.latitude && site.longitude ? `${site.latitude}, ${site.longitude}` : '',
+          date: raw.scheduled_start_date ? raw.scheduled_start_date.split('T')[0] : '',
+          heureDebut: raw.start_date ? new Date(raw.start_date).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '',
+          heureFin: raw.end_date ? new Date(raw.end_date).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '',
+          statut: raw.status,
+          technicien: { nom: tech.full_name || '', telephone: tech.phone || '' },
+          travaux: report.description || '',
+          materiel: Array.isArray(raw.equipment_list) ? raw.equipment_list.map(e => e.equipment_id) : [],
+          incidents: '',
+          photos: report.delivery_photo_url || [],
+        })
+        if (report.notes) setComment(report.notes)
+      })
+      .catch(() => navigate('/dashboard/rapports'))
+  }, [id, navigate])
 
   const handleAction = async (action) => {
     setLoading(true)
     setActionError('')
     try {
-      await axios.patch(`/api/missions/${id}/status`, { status: action === 'Approved' ? 'completed' : 'in-progress' }, {
+      await axios.patch(`/api/missions/${id}/status`, {
+        status: action === 'Approved' ? 'completed' : 'pending',
+        notes: commentaire || undefined,
+      }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
       setActionDone(action)
@@ -100,26 +115,28 @@ export default function RapportDetail() {
       <FormCard title={t.siteLocation}>
         <div className="grid grid-cols-2 gap-4">
           <div><p style={lbl}>{t.siteName}</p><p style={val}>{rapport.site}</p></div>
-          <div><p style={lbl}>{t.gpsCoordinates}</p><p style={{ ...val, color:'#60a5fa' }}>📍 {rapport.gps}</p></div>
+          <div><p style={lbl}>{t.gpsCoordinates}</p><p style={{ ...val, color:'#60a5fa' }}>📍 {rapport.gps || '—'}</p></div>
         </div>
       </FormCard>
 
       <FormCard title={t.interventionSchedule}>
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div><p style={lbl}>{t.date}</p><p style={val}>{rapport.date}</p></div>
-          <div><p style={lbl}>{t.heureDebut}</p><p style={val}>{rapport.heureDebut}</p></div>
-          <div><p style={lbl}>{t.heureFin}</p><p style={val}>{rapport.heureFin}</p></div>
+          <div><p style={lbl}>{t.heureDebut}</p><p style={val}>{rapport.heureDebut || '—'}</p></div>
+          <div><p style={lbl}>{t.heureFin}</p><p style={val}>{rapport.heureFin || '—'}</p></div>
         </div>
         <div className="mb-4">
           <p style={lbl}>{t.workPerformed}</p>
-          <p style={{ ...val, lineHeight:1.7, marginTop:4 }}>{rapport.travaux}</p>
+          <p style={{ ...val, lineHeight:1.7, marginTop:4 }}>{rapport.travaux || t.noIncidents}</p>
         </div>
         <div className="mb-4">
           <p style={lbl}>{t.materialsUsed}</p>
           <div className="flex flex-wrap gap-2 mt-2">
-            {rapport.materiel?.map(m => (
-              <span key={m} style={{ background:'rgba(59,130,246,.08)', border:'0.5px solid rgba(59,130,246,.2)', borderRadius:6, padding:'3px 10px', fontSize:11, color:'#93c5fd' }}>{m}</span>
-            ))}
+            {rapport.materiel?.length > 0
+              ? rapport.materiel.map(m => (
+                  <span key={m} style={{ background:'rgba(59,130,246,.08)', border:'0.5px solid rgba(59,130,246,.2)', borderRadius:6, padding:'3px 10px', fontSize:11, color:'#93c5fd' }}>{m}</span>
+                ))
+              : <span style={{ fontSize:11, color:'var(--text-muted)' }}>—</span>}
           </div>
         </div>
         <div>
@@ -143,6 +160,10 @@ export default function RapportDetail() {
       )}
 
       <FormCard title={t.adminValidation}>
+        <div className="mb-4">
+          <p style={lbl}>{t.status}</p>
+          <StatusBadge statut={rapport.statut} />
+        </div>
         <textarea
           value={commentaire}
           onChange={e => setComment(e.target.value)}
@@ -151,12 +172,12 @@ export default function RapportDetail() {
           style={{ width:'100%', background:'var(--bg-input)', border:'0.5px solid var(--border-strong)', borderRadius:7, padding:'10px 12px', fontSize:13, color:'var(--text-primary)', outline:'none', resize:'vertical', marginBottom:14 }}
         />
         <div className="flex gap-3">
-          <button onClick={() => handleAction('Approved')} disabled={loading}
-            style={{ background:'rgba(34,197,94,.12)', border:'0.5px solid rgba(34,197,94,.3)', color:'#4ade80', borderRadius:8, padding:'9px 20px', fontSize:13, fontWeight:500, cursor:'pointer', opacity: loading ? .6 : 1 }}>
+          <button onClick={() => handleAction('Approved')} disabled={loading || rapport.statut === 'completed'}
+            style={{ background:'rgba(34,197,94,.12)', border:'0.5px solid rgba(34,197,94,.3)', color:'#4ade80', borderRadius:8, padding:'9px 20px', fontSize:13, fontWeight:500, cursor:'pointer', opacity: loading || rapport.statut === 'completed' ? .6 : 1 }}>
             {t.approveReport}
           </button>
-          <button onClick={() => handleAction('Rejected')} disabled={loading}
-            style={{ background:'rgba(239,68,68,.1)', border:'0.5px solid rgba(239,68,68,.25)', color:'#f87171', borderRadius:8, padding:'9px 20px', fontSize:13, cursor:'pointer', opacity: loading ? .6 : 1 }}>
+          <button onClick={() => handleAction('Rejected')} disabled={loading || rapport.statut === 'pending'}
+            style={{ background:'rgba(239,68,68,.1)', border:'0.5px solid rgba(239,68,68,.25)', color:'#f87171', borderRadius:8, padding:'9px 20px', fontSize:13, cursor:'pointer', opacity: loading || rapport.statut === 'pending' ? .6 : 1 }}>
             {t.reject}
           </button>
           <button onClick={() => navigate('/dashboard/rapports')}

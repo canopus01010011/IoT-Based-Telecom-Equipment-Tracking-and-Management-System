@@ -38,6 +38,7 @@ export const updateMissionSchema = Joi.object({
 
 export const updateStatusSchema = Joi.object({
   status: Joi.string()
-    .valid('in-progress', 'completed')
+    .valid('pending', 'in-progress', 'completed')
     .required(),
+  notes: Joi.string().optional().allow(''),
 });
