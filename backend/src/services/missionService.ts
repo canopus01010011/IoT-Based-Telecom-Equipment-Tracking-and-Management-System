@@ -121,16 +121,12 @@ export class MissionService {
 
     await mission.update(updates);
 
-    // On reject: clear report content so technician can re-upload
-    // Don't save admin notes to Report.notes (they're in the notification)
+    // On reject: delete the report so the technician can start fresh
     if (status === 'pending' && previousStatus === 'completed') {
       try {
-        const existing = await Report.findOne({ where: { mission_id: id } });
-        if (existing) {
-          await existing.update({ delivery_photo_url: [], description: '', notes: '' });
-        }
+        await Report.destroy({ where: { mission_id: id } });
       } catch (err: any) {
-        console.error('Failed to clear report:', err.message);
+        console.error('Failed to delete report:', err.message);
       }
     } else if (notes) {
       try {
