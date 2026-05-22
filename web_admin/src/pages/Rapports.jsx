@@ -10,7 +10,7 @@ import { useT }    from '../context/LanguageContext'
 
 const avatarColors = ['#1d4ed8','#0f6e56','#712b13','#534ab7','#854f0b']
 
-const STATUS_FILTERS = ['All', 'pending', 'in-progress', 'completed']
+const STATUS_FILTERS = ['All', 'completed']
 const COLS = '.7fr 1.3fr 1.1fr 1.4fr .9fr .8fr'
 
 export default function Rapports() {
@@ -47,15 +47,13 @@ export default function Rapports() {
   const stats = {
     total:  rapports.length,
     valide: rapports.filter(r => r.statut === 'completed').length,
-    attend: rapports.filter(r => r.statut === 'in-progress' || r.statut === 'pending').length,
   }
 
   return (
     <PageLayout title={t.reportsTitle}>
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-2 gap-3 mb-5">
         <StatCard label={t.reportsSubmitted}  value={stats.total}  color="#e2e8f0" />
         <StatCard label={t.approvedStat}      value={stats.valide} color="#4ade80" />
-        <StatCard label={t.pendingValidation} value={stats.attend} color="#fbbf24" />
       </div>
 
       <FilterBar

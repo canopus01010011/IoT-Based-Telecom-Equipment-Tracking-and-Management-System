@@ -14,21 +14,20 @@ export class ReportService {
     if (filters.technicianId) where.technician_id = filters.technicianId;
     if (filters.driverId) where.driver_id = filters.driverId;
 
+    // Only return completed missions that have a report
+    where.status = 'completed';
+
     const { count, rows } = await Mission.findAndCountAll({
       where,
       include: [
         { model: User, as: 'technician', attributes: ['id', 'full_name', 'phone'] },
         { model: User, as: 'driver', attributes: ['id', 'full_name', 'phone'] },
         { model: Site, attributes: ['id', 'name', 'latitude', 'longitude'] },
-        { model: Report, attributes: ['id', 'description', 'notes', 'delivery_photo_url', 'report_date'] },
+        { model: Report, required: true, attributes: ['id', 'description', 'notes', 'delivery_photo_url', 'report_date'] },
       ],
       ...(limit > 0 ? { limit, offset } : {}),
       order: [['creation_date', 'DESC']],
     });
-
-    const completed = rows.filter(m => m.status === 'completed').length;
-    const inProgress = rows.filter(m => m.status === 'in-progress').length;
-    const pending = rows.filter(m => m.status === 'pending').length;
 
     return {
       missions: rows,
@@ -37,10 +36,7 @@ export class ReportService {
       totalPages: limit > 0 ? Math.ceil(count / limit) : 1,
       summary: {
         total: count,
-        completed,
-        inProgress,
-        pending,
-        completionRate: count > 0 ? ((completed / count) * 100).toFixed(1) : 0,
+        completed: count,
       },
     };
   }
